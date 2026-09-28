@@ -1,0 +1,31 @@
+{% extends 'base.html.twig' %}
+{% set section = 'stammdaten' %}
+
+{% block title %}{{ owner.name }}{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Stammdaten &gt; Eigentümer &gt; {{ owner.ownerNumber }}</div>
+<h2>{{ owner.name }} <a href="{{ path('owner_edit', {id: owner.id}) }}" class="btn btn-sm">Ändern</a></h2>
+<table class="table detail">
+    <tr><th>Eigentümernummer</th><td>{{ owner.ownerNumber }}</td></tr>
+    <tr><th>Anschrift</th><td class="pre">{{ owner.address }}</td></tr>
+    <tr><th>Ansprechpartner</th><td>{{ owner.contactPerson }}</td></tr>
+    <tr><th>E-Mail</th><td>{{ owner.email }}</td></tr>
+    <tr><th>Telefon</th><td>{{ owner.phone }}</td></tr>
+    <tr><th>Status</th><td>{{ owner.status == 'ACTIVE' ? 'aktiv' : 'inaktiv' }}</td></tr>
+</table>
+
+<h3>Objekte</h3>
+<table class="table table-striped">
+    <tr><th>Nr.</th><th>Bezeichnung</th><th>Anschrift</th><th>Verwaltung seit</th></tr>
+    {% for p in owner.properties %}
+        <tr>
+            <td>{{ p.propertyNumber }}</td>
+            <td><a href="{{ path('property_show', {id: p.id}) }}">{{ p.name }}</a></td>
+            <td>{{ p.addressLine }}</td>
+            <td>{{ p.managementStart ? p.managementStart|date('d.m.Y') }}</td>
+        </tr>
+    {% endfor %}
+</table>
+<div class="btn-bar"><a href="{{ path('owner_index') }}" class="btn">Zurück</a></div>
+{% endblock %}

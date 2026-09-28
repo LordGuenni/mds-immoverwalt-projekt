@@ -1,0 +1,82 @@
+{% extends 'base.html.twig' %}
+{% set section = 'vorgaenge' %}
+
+{% block title %}Meldung {{ issue.issueNumber }}{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Vorgänge &gt; Meldungen &gt; {{ issue.issueNumber }}</div>
+<h2>Meldung {{ issue.issueNumber }} <a href="{{ path('issue_edit', {id: issue.id}) }}" class="btn btn-sm">Ändern</a></h2>
+
+{% include 'issue/_details.html.twig' %}
+
+<div class="btn-bar">
+    <form method="post" action="{{ path('issue_status', {id: issue.id}) }}" class="inline">
+        Status:
+        <select name="status">
+            {% for label, key in statuses %}
+                <option value="{{ key }}" {{ issue.status == key ? 'selected' }}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        Kommentar: <input type="text" name="comment" size="30">
+        <button class="btn btn-sm">Status ändern</button>
+    </form>
+
+    {% if issue.status != 'CLOSED' and issue.status != 'REJECTED' %}
+        <form method="post" action="{{ path('issue_close', {id: issue.id}) }}" class="inline">
+            <button class="btn btn-sm btn-primary">Meldung schließen</button>
+        </form>
+    {% endif %}
+
+    <a href="{{ path('issue_print', {id: issue.id}) }}" class="btn btn-sm" target="_blank">Mitteilung an Mieter drucken</a>
+</div>
+
+<div class="cols">
+    <div class="col">
+        <h3>Aufgaben</h3>
+        <table class="table table-striped table-condensed">
+            <tr><th>Nr.</th><th>Titel</th><th>Dienstleister</th><th>fällig</th><th>Status</th></tr>
+            {% for t in issue.tasks %}
+                <tr>
+                    <td><a href="{{ path('task_edit', {id: t.id}) }}">{{ t.taskNumber }}</a></td>
+                    <td>{{ t.title }}</td>
+                    <td>{{ t.serviceProvider ? t.serviceProvider.company : 'intern' }}</td>
+                    <td>{{ t.dueDate ? t.dueDate|date('d.m.Y') }}</td>
+                    <td>{{ t.statusLabel }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5">keine</td></tr>
+            {% endfor %}
+        </table>
+        <form method="post" action="{{ path('issue_add_task', {id: issue.id}) }}">
+            Neue Aufgabe: <input type="text" name="title" size="35"> <button class="btn btn-sm">anlegen</button>
+        </form>
+    </div>
+    <div class="col">
+        <h3>Verlauf</h3>
+        <table class="table table-striped table-condensed">
+            <tr><th>Zeitpunkt</th><th>von</th><th>nach</th><th>durch</th><th>Kommentar</th></tr>
+            {% for c in issue.statusChanges %}
+                <tr>
+                    <td>{{ c.changedAt|date('d.m.Y H:i') }}</td>
+                    <td>{{ c.oldStatus }}</td>
+                    <td>{{ c.newStatus }}</td>
+                    <td>{{ c.changedBy }}</td>
+                    <td>{{ c.comment }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <h3>Termine</h3>
+        <table class="table table-striped table-condensed">
+            {% for a in appointments %}
+                <tr><td>{{ a.startsAt|date('d.m.Y H:i') }}</td><td>{{ a.title }}</td></tr>
+            {% else %}
+                <tr><td>keine</td></tr>
+            {% endfor %}
+        </table>
+        <a href="{{ path('appointment_new', {refType: 'ISSUE', refId: issue.id}) }}" class="btn btn-sm">Termin anlegen</a>
+    </div>
+</div>
+
+<div class="btn-bar"><a href="{{ path('issue_index') }}" class="btn">Zurück</a></div>
+{% endblock %}

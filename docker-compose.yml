@@ -1,0 +1,59 @@
+# ImmoVerwalt - Altsystem (Symfony 4.4 / PHP 7.4)
+# Start:   docker compose up -d
+# Aufruf:  http://localhost:8080  (Anmeldung siehe README.md)
+
+name: immoverwalt
+
+services:
+  php:
+    # fertiges Image von GitHub; wird nur lokal gebaut, wenn es nicht geladen werden kann
+    image: ghcr.io/wolpert-coniant/immoverwalt-php:latest
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: immoverwalt-php
+    volumes:
+      - ./:/var/www/html
+      # vendor/ und var/ liegen in Docker-Volumes - auf Windows/macOS
+      # wären sie über das gemountete Verzeichnis sehr langsam
+      - vendor:/var/www/html/vendor
+      - var:/var/www/html/var
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: "postgresql://immo:immo@db:5432/immoverwalt?serverVersion=13&charset=utf8"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: nginx:1.25-alpine
+    container_name: immoverwalt-web
+    ports:
+      - "8080:80"
+    volumes:
+      - ./public:/var/www/html/public:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - php
+
+  db:
+    image: postgres:13-alpine
+    container_name: immoverwalt-db
+    environment:
+      POSTGRES_DB: immoverwalt
+      POSTGRES_USER: immo
+      POSTGRES_PASSWORD: immo
+    ports:
+      - "5433:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U immo -d immoverwalt"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  db-data:
+  vendor:
+  var:

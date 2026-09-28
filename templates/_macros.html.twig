@@ -1,0 +1,11 @@
+{% macro unit_status(status) %}
+    {%- set labels = {'AVAILABLE': 'FREI', 'RESERVED': 'RESERVIERT', 'RENTED': 'VERMIETET', 'NOTICE_GIVEN': 'GEKÜNDIGT', 'RENOVATION': 'RENOVIERUNG', 'BLOCKED': 'GESPERRT'} -%}
+    {{- labels[status]|default(status) -}}
+{% endmacro %}
+
+{% macro tenancy_status(status) %}
+    {%- set labels = {'DRAFT': 'Entwurf', 'ACTIVE': 'aktiv', 'NOTICE_GIVEN': 'gekündigt', 'TERMINATED': 'aufgehoben', 'ENDED': 'beendet'} -%}
+    {{- labels[status]|default(status) -}}
+{% endmacro %}
+
+{% macro money(value) %}{{ value is null ? '' : value|number_format(2, ',', '.') ~ ' €' }}{% endmacro %}

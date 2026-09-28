@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as m %}
+{% set section = 'berichte' %}
+
+{% block title %}Leerstandsbericht{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Berichte &gt; Leerstand</div>
+<h2>Leerstandsbericht</h2>
+<table class="table table-striped">
+    <tr><th>Objekt</th><th>Eigentümer</th><th class="num">Einheiten</th><th class="num">vermietet</th><th class="num">frei</th><th class="num">sonstige</th><th class="num">Leerstand</th><th class="num">Soll-Kaltmiete</th></tr>
+    {% for row in rows %}
+        <tr>
+            <td><a href="{{ path('property_show', {id: row.property.id}) }}">{{ row.property.name }}</a></td>
+            <td>{{ row.property.owner.name }}</td>
+            <td class="num">{{ row.stats.units }}</td>
+            <td class="num">{{ row.stats.rented }}</td>
+            <td class="num">{{ row.stats.available }}</td>
+            <td class="num">{{ row.stats.other }}</td>
+            <td class="num">{{ row.stats.vacancy }} %</td>
+            <td class="num">{{ m.money(row.stats.rent) }}</td>
+        </tr>
+    {% endfor %}
+</table>
+{% endblock %}

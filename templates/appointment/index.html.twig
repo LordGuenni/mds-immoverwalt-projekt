@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+{% set section = 'vorgaenge' %}
+
+{% block title %}Termine{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Vorgänge &gt; Termine</div>
+<h2>Termine und Informationen</h2>
+<div class="btn-bar">
+    <a href="{{ path('appointment_index') }}">kommende</a> | <a href="{{ path('appointment_index', {filter: 'all'}) }}">alle</a>
+    &nbsp; <a href="{{ path('appointment_new') }}" class="btn btn-sm">Neuer Termin</a>
+</div>
+<table class="table table-striped">
+    <tr><th>Beginn</th><th>Ende</th><th>Titel</th><th>Art</th><th>Bezug</th><th>ID</th><th></th></tr>
+    {% for a in appointments %}
+        <tr>
+            <td>{{ a.startsAt|date('d.m.Y H:i') }}</td>
+            <td>{{ a.endsAt ? a.endsAt|date('H:i') }}</td>
+            <td>{{ a.title }}</td>
+            <td>{{ a.typeLabel }}</td>
+            <td>{{ a.refTypeLabel }}</td>
+            <td>{{ a.refId }}</td>
+            <td><a href="{{ path('appointment_edit', {id: a.id}) }}" class="btn btn-sm">Bearbeiten</a></td>
+        </tr>
+    {% else %}
+        <tr><td colspan="7">keine</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

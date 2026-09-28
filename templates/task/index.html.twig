@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+{% set section = 'vorgaenge' %}
+
+{% block title %}Aufgaben{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Vorgänge &gt; Aufgaben</div>
+<h2>Aufgaben</h2>
+<div class="btn-bar">
+    <a href="{{ path('task_index') }}">offene</a> | <a href="{{ path('task_index', {filter: 'all'}) }}">alle</a>
+    &nbsp; <a href="{{ path('task_new') }}" class="btn btn-sm">Neue Aufgabe</a>
+</div>
+<table class="table table-striped">
+    <tr><th>Nr.</th><th>Titel</th><th>Objekt</th><th>Meldung</th><th>verantwortlich</th><th>Dienstleister</th><th>fällig</th><th>Status</th></tr>
+    {% for t in tasks %}
+        <tr>
+            <td><a href="{{ path('task_edit', {id: t.id}) }}">{{ t.taskNumber }}</a></td>
+            <td>{{ t.title }}</td>
+            <td>{{ t.property.name }}{% if t.unit %}, {{ t.unit.unitNumber }}{% endif %}</td>
+            <td>{% if t.issue %}<a href="{{ path('issue_show', {id: t.issue.id}) }}">{{ t.issue.issueNumber }}</a>{% endif %}</td>
+            <td>{{ t.responsible }}</td>
+            <td>{{ t.serviceProvider ? t.serviceProvider.company }}</td>
+            <td class="{{ t.dueDate and t.dueDate < date('today') and t.open ? 'prio-4' }}">{{ t.dueDate ? t.dueDate|date('d.m.Y') }}</td>
+            <td>{{ t.statusLabel }}</td>
+        </tr>
+    {% else %}
+        <tr><td colspan="8">keine</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+{% set section = 'vorgaenge' %}
+
+{% block title %}Mitteilung {{ issue.issueNumber }}{% endblock %}
+
+{% block body %}
+<div class="letter">
+    <p class="no-print"><button class="btn" onclick="window.print()">Drucken</button></p>
+    <p>
+        Hausverwaltung &middot; Objektbetreuung<br>
+        {% if issue.tenant %}{{ issue.tenant.salutation }} {{ issue.tenant.fullName }}<br>{% endif %}
+        {{ issue.property.addressLine }}{% if issue.unit %}, {{ issue.unit.unitNumber }}{% endif %}
+    </p>
+    <p style="text-align:right">{{ 'now'|date('d.m.Y') }}</p>
+    <h3>Ihre Meldung {{ issue.issueNumber }} vom {{ issue.createdAt|date('d.m.Y') }}</h3>
+    <p>Sehr geehrte Damen und Herren,</p>
+    <p>wir bestätigen den Eingang Ihrer Meldung und informieren Sie über den aktuellen Stand:</p>
+
+    {% include 'issue/_details.html.twig' %}
+
+    <p>Mit freundlichen Grüßen<br>Ihre Hausverwaltung</p>
+</div>
+{% endblock %}

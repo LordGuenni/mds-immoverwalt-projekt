@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as m %}
+{% set section = 'abrechnung' %}
+
+{% block title %}Sollstellungen{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Abrechnung &gt; Sollstellungen</div>
+<h2>Sollstellungen {{ month }}</h2>
+
+<div class="btn-bar">
+    <form method="get" class="inline">
+        Monat: <input type="month" name="month" value="{{ month }}"> <button class="btn btn-sm">anzeigen</button>
+    </form>
+    &nbsp;
+    <form method="post" action="{{ path('charge_generate') }}" class="inline">
+        <input type="hidden" name="month" value="{{ month }}">
+        <button class="btn btn-sm btn-primary">Sollstellungen für {{ month }} erzeugen</button>
+    </form>
+</div>
+
+{% set total = 0 %}
+<table class="table table-striped">
+    <tr><th>Vertrag</th><th>Einheit</th><th>Mieter</th><th>Position</th><th>fällig</th><th class="num">Betrag</th><th>Status</th></tr>
+    {% for c in charges %}
+        {% set total = total + c.amount %}
+        <tr>
+            <td><a href="{{ path('account_show', {id: c.tenancy.id}) }}">{{ c.tenancy.contractNumber }}</a></td>
+            <td>{{ c.tenancy.unit }}</td>
+            <td>{{ c.tenancy.tenantNames }}</td>
+            <td>{{ c.positionLabel }}</td>
+            <td>{{ c.dueDate|date('d.m.Y') }}</td>
+            <td class="num">{{ m.money(c.amount) }}</td>
+            <td>{{ c.status }}</td>
+        </tr>
+    {% else %}
+        <tr><td colspan="7">keine Sollstellungen für diesen Monat</td></tr>
+    {% endfor %}
+    <tr><th colspan="5">Summe</th><th class="num">{{ m.money(total) }}</th><th></th></tr>
+</table>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as m %}
+{% set section = 'stammdaten' %}
+
+{% block title %}{{ property.name }}{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Objektverwaltung &gt; Objekte &gt; {{ property.propertyNumber }}</div>
+<h2>{{ property.name }} <a href="{{ path('property_edit', {id: property.id}) }}" class="btn btn-sm">Ändern</a></h2>
+
+<div class="cols">
+    <div class="col">
+        <table class="table detail">
+            <tr><th>Objektnummer</th><td>{{ property.propertyNumber }}</td></tr>
+            <tr><th>Anschrift</th><td>{{ property.addressLine }}</td></tr>
+            <tr><th>Eigentümer</th><td><a href="{{ path('owner_show', {id: property.owner.id}) }}">{{ property.owner.name }}</a></td></tr>
+            <tr><th>Baujahr</th><td>{{ property.constructionYear }}</td></tr>
+            <tr><th>Verwaltungsbeginn</th><td>{{ property.managementStart ? property.managementStart|date('d.m.Y') }}</td></tr>
+        </table>
+    </div>
+    <div class="col">
+        <table class="table detail">
+            <tr><th>Einheiten</th><td class="num">{{ stats.units }}</td></tr>
+            <tr><th>vermietet / gekündigt</th><td class="num">{{ stats.rented }}</td></tr>
+            <tr><th>frei</th><td class="num">{{ stats.available }} ({{ stats.vacancy }} %)</td></tr>
+            <tr><th>sonstige</th><td class="num">{{ stats.other }}</td></tr>
+            <tr><th>Wohn-/Nutzfläche</th><td class="num">{{ stats.area|number_format(2, ',', '.') }} m²</td></tr>
+            <tr><th>Soll-Kaltmiete / Monat</th><td class="num">{{ m.money(stats.rent) }}</td></tr>
+        </table>
+    </div>
+</div>
+
+{% for b in property.buildings %}
+    <h3>Gebäude {{ b.buildingNumber }}: {{ b.name }} <a href="{{ path('building_edit', {id: b.id}) }}" class="btn btn-sm">Ändern</a></h3>
+    <table class="table table-striped">
+        <tr><th>Einheit</th><th>Typ</th><th>Etage</th><th class="num">Fläche</th><th class="num">Kaltmiete</th><th>Mieter</th><th>Status</th></tr>
+        {% for u in b.units %}
+            {% set current = u.currentTenancy %}
+            <tr>
+                <td><a href="{{ path('unit_show', {id: u.id}) }}">{{ u.unitNumber }}</a></td>
+                <td>{{ u.typeLabel }}</td>
+                <td>{{ u.floor }}</td>
+                <td class="num">{{ u.area|number_format(2, ',', '.') }} m²</td>
+                <td class="num">{{ m.money(u.coldRent) }}</td>
+                <td>{{ current ? current.tenantNames }}</td>
+                <td><span class="status {{ u.cssClass }}">{{ m.unit_status(u.status) }}</span></td>
+            </tr>
+        {% endfor %}
+    </table>
+    <a href="{{ path('unit_new', {building: b.id}) }}" class="btn btn-sm">Einheit hinzufügen</a>
+{% endfor %}
+
+<h3>Termine zum Objekt</h3>
+<table class="table table-striped">
+    <tr><th>Datum</th><th>Termin</th><th>Art</th></tr>
+    {% for a in appointments %}
+        <tr><td>{{ a.startsAt|date('d.m.Y H:i') }}</td><td>{{ a.title }}</td><td>{{ a.typeLabel }}</td></tr>
+    {% else %}
+        <tr><td colspan="3">keine</td></tr>
+    {% endfor %}
+</table>
+
+<div class="btn-bar">
+    <a href="{{ path('building_new', {id: property.id}) }}" class="btn">Gebäude hinzufügen</a>
+    <a href="{{ path('appointment_new', {refType: 'PROPERTY', refId: property.id}) }}" class="btn">Termin anlegen</a>
+    <a href="{{ path('property_index') }}" class="btn">Zurück</a>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+{% set section = 'vermietung' %}
+
+{% block title %}Interessenten{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Vermietung &gt; Interessenten</div>
+<h2>Mietinteressenten</h2>
+<table class="table table-striped">
+    <tr><th>Name</th><th>Kontakt</th><th>gewünschte Einheit</th><th>Anfrage</th><th>Status</th><th></th></tr>
+    {% for p in prospects %}
+        <tr>
+            <td>{{ p.name }}</td>
+            <td>{{ p.email }} {{ p.phone }}</td>
+            <td>{% if p.unit %}<a href="{{ path('unit_show', {id: p.unit.id}) }}">{{ p.unit }}</a>{% endif %}</td>
+            <td>{{ p.requestDate|date('d.m.Y') }}</td>
+            <td>{{ p.statusLabel }}</td>
+            <td>
+                <a href="{{ path('prospect_edit', {id: p.id}) }}" class="btn btn-sm">Bearbeiten</a>
+                {% if p.status in ['NEW', 'VIEWING_PLANNED', 'APPLIED'] %}
+                    <a href="{{ path('viewing_new', {prospect: p.id}) }}" class="btn btn-sm">Besichtigung</a>
+                    <form method="post" action="{{ path('prospect_accept', {id: p.id}) }}" class="inline"
+                          onsubmit="return confirm('Zusage erteilen und Mieter anlegen?')">
+                        <button class="btn btn-sm">Zusage</button>
+                    </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+<div class="btn-bar"><a href="{{ path('prospect_new') }}" class="btn">Neu</a></div>
+{% endblock %}

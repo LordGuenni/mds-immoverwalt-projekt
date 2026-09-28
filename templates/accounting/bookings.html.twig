@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as m %}
+{% set section = 'abrechnung' %}
+
+{% block title %}Buchungen{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Abrechnung &gt; Buchungen</div>
+<h2>Buchungen (Eigentümer)</h2>
+<div class="btn-bar"><a href="{{ path('booking_new') }}" class="btn btn-sm">Neue Buchung</a></div>
+<table class="table table-striped">
+    <tr><th>Datum</th><th>Objekt</th><th>Eigentümer</th><th>Einheit</th><th>Kategorie</th><th>Beschreibung</th><th class="num">Betrag</th></tr>
+    {% for b in bookings %}
+        <tr>
+            <td>{{ b.date|date('d.m.Y') }}</td>
+            <td>{{ b.property.name }}</td>
+            <td>{{ b.owner.name }}</td>
+            <td>{{ b.unit ? b.unit.unitNumber }}</td>
+            <td>{{ b.categoryLabel }}</td>
+            <td>{{ b.description }}</td>
+            <td class="num">{{ m.money(b.signedAmount) }}</td>
+        </tr>
+    {% endfor %}
+</table>
+{% endblock %}

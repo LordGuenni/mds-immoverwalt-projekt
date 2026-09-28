@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as m %}
+{% set section = 'stammdaten' %}
+
+{% block title %}Mieteinheiten{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Objektverwaltung &gt; Mieteinheiten</div>
+<h2>Mieteinheiten</h2>
+
+<form method="get" class="btn-bar">
+    Status:
+    <select name="status" onchange="this.form.submit()">
+        <option value="">- alle -</option>
+        {% for key in ['AVAILABLE', 'RESERVED', 'RENTED', 'NOTICE_GIVEN', 'RENOVATION', 'BLOCKED'] %}
+            <option value="{{ key }}" {{ status == key ? 'selected' }}>{{ m.unit_status(key) }}</option>
+        {% endfor %}
+    </select>
+</form>
+
+<table class="table table-striped">
+    <tr><th>Objekt</th><th>Gebäude</th><th>Einheit</th><th>Typ</th><th class="num">Fläche</th><th class="num">Kaltmiete</th><th class="num">NK-VZ</th><th>Status</th></tr>
+    {% for u in units %}
+        <tr>
+            <td>{{ u.building.property.name }}</td>
+            <td>{{ u.building.name }}</td>
+            <td><a href="{{ path('unit_show', {id: u.id}) }}">{{ u.unitNumber }}</a></td>
+            <td>{{ u.typeLabel }}</td>
+            <td class="num">{{ u.area|number_format(2, ',', '.') }} m²</td>
+            <td class="num">{{ m.money(u.coldRent) }}</td>
+            <td class="num">{{ m.money(u.serviceChargeAdvance) }}</td>
+            <td><span class="status {{ u.cssClass }}">{{ m.unit_status(u.status) }}</span></td>
+        </tr>
+    {% else %}
+        <tr><td colspan="8">keine Einheiten gefunden</td></tr>
+    {% endfor %}
+</table>
+<small>{{ units|length }} Einheiten</small>
+{% endblock %}

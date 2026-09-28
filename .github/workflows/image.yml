@@ -1,0 +1,40 @@
+# Baut das php-Image und veröffentlicht es in der GitHub Container Registry
+# (ghcr.io/<konto>/immoverwalt-php) - für Intel/AMD und Apple Silicon.
+name: Image bauen
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docker/php/**"
+      - "composer.json"
+      - "composer.lock"
+      - ".github/workflows/image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Image-Name in Kleinbuchstaben
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/immoverwalt-php" >> "$GITHUB_ENV"
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/php/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ env.IMAGE }}:latest
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}

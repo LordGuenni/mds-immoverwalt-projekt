@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as m %}
+{% set section = 'vermietung' %}
+
+{% block title %}Mietverhältnisse{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Vermietung &gt; Mietverhältnisse</div>
+<h2>Mietverhältnisse</h2>
+<div class="btn-bar">
+    Anzeigen:
+    <a href="{{ path('tenancy_index', {filter: 'current'}) }}">laufende</a> |
+    <a href="{{ path('tenancy_index', {filter: 'DRAFT'}) }}">Entwürfe</a> |
+    <a href="{{ path('tenancy_index', {filter: 'NOTICE_GIVEN'}) }}">gekündigte</a> |
+    <a href="{{ path('tenancy_index', {filter: 'ENDED'}) }}">beendete</a> |
+    <a href="{{ path('tenancy_index', {filter: 'all'}) }}">alle</a>
+</div>
+<table class="table table-striped">
+    <tr><th>Vertrag</th><th>Objekt</th><th>Einheit</th><th>Mieter</th><th>Beginn</th><th>Ende</th><th class="num">Kaltmiete</th><th class="num">NK-VZ</th><th>Status</th></tr>
+    {% for t in tenancies %}
+        <tr>
+            <td><a href="{{ path('tenancy_show', {id: t.id}) }}">{{ t.contractNumber }}</a></td>
+            <td>{{ t.unit.building.property.name }}</td>
+            <td><a href="{{ path('unit_show', {id: t.unit.id}) }}">{{ t.unit.unitNumber }}</a></td>
+            <td>{{ t.tenantNames }}</td>
+            <td>{{ t.startDate|date('d.m.Y') }}</td>
+            <td>{{ t.endDate ? t.endDate|date('d.m.Y') }}</td>
+            <td class="num">{{ m.money(t.coldRent) }}</td>
+            <td class="num">{{ m.money(t.serviceChargeAdvance) }}</td>
+            <td>{{ m.tenancy_status(t.status) }}</td>
+        </tr>
+    {% else %}
+        <tr><td colspan="9">keine</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

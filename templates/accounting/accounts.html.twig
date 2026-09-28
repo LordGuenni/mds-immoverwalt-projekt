@@ -1,0 +1,24 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as m %}
+{% set section = 'abrechnung' %}
+
+{% block title %}Mieterkonten{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Abrechnung &gt; Mieterkonten</div>
+<h2>Mieterkonten</h2>
+<table class="table table-striped">
+    <tr><th>Vertrag</th><th>Objekt</th><th>Einheit</th><th>Mieter</th><th class="num">Monatsmiete</th><th class="num">offener Saldo</th></tr>
+    {% for row in rows %}
+        {% set t = row.tenancy %}
+        <tr>
+            <td><a href="{{ path('account_show', {id: t.id}) }}">{{ t.contractNumber }}</a></td>
+            <td>{{ t.unit.building.property.name }}</td>
+            <td>{{ t.unit.unitNumber }}</td>
+            <td>{{ t.tenantNames }}</td>
+            <td class="num">{{ m.money(t.totalRent) }}</td>
+            <td class="num {{ row.balance > 0 ? 'prio-4' }}">{{ m.money(row.balance) }}</td>
+        </tr>
+    {% endfor %}
+</table>
+{% endblock %}

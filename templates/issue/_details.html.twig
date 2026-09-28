@@ -1,0 +1,15 @@
+<table class="table detail">
+    <tr><th>Objekt</th><td>{{ issue.property.name }}, {{ issue.property.addressLine }}</td></tr>
+    <tr><th>Mieteinheit</th><td>{{ issue.unit ? issue.unit.unitNumber : 'Allgemeinfläche' }}</td></tr>
+    <tr><th>Mieter</th><td>{{ issue.tenant ? issue.tenant.fullName : '-' }}</td></tr>
+    <tr><th>Erfasst am</th><td>{{ issue.createdAt|date('d.m.Y H:i') }}</td></tr>
+    <tr><th>Kategorie</th><td>{{ issue.categoryLabel }}</td></tr>
+    <tr><th>Beschreibung</th><td class="pre">{{ issue.description }}</td></tr>
+    <tr><th>Priorität</th><td class="prio-{{ issue.priority }}">{{ issue.priorityLabel }}</td></tr>
+    <tr><th>Status</th><td>{{ issue.statusLabel }}</td></tr>
+    <tr><th>zuständig</th><td>{{ issue.assignee }}</td></tr>
+    {% if issue.attachments %}<tr><th>Anhänge</th><td>{{ issue.attachments }}</td></tr>{% endif %}
+    {% if app.user and 'ROLE_LETTING_MANAGER' not in app.user.roles %}
+        <tr><th>interne Notizen</th><td class="pre">{{ issue.internalNotes }}</td></tr>
+    {% endif %}
+</table>

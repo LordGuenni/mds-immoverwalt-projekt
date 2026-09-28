@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+{% set section = 'stammdaten' %}
+
+{% block title %}Dienstleister{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Stammdaten &gt; Dienstleister</div>
+<h2>Dienstleister</h2>
+<table class="table table-striped">
+    <tr><th>Firma</th><th>Gewerk</th><th>Ansprechpartner</th><th>Telefon</th><th>Status</th><th></th></tr>
+    {% for p in providers %}
+        <tr>
+            <td>{{ p.company }}</td>
+            <td>{{ p.tradeLabel }}</td>
+            <td>{{ p.contactPerson }}</td>
+            <td>{{ p.phone }}</td>
+            <td>{{ p.status == 'ACTIVE' ? 'aktiv' : 'inaktiv' }}</td>
+            <td><a href="{{ path('provider_edit', {id: p.id}) }}" class="btn btn-sm">Bearbeiten</a></td>
+        </tr>
+    {% endfor %}
+</table>
+<div class="btn-bar"><a href="{{ path('provider_new') }}" class="btn">Neu</a></div>
+{% endblock %}

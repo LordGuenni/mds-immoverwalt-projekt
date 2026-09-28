@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+{% set section = 'stammdaten' %}
+
+{% block title %}Eigentümer{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Stammdaten &gt; Eigentümer</div>
+<h2>Eigentümer</h2>
+<table class="table table-striped">
+    <tr><th>Nr.</th><th>Name / Firma</th><th>Ansprechpartner</th><th>Telefon</th><th>Objekte</th><th>Status</th></tr>
+    {% for o in owners %}
+        <tr>
+            <td>{{ o.ownerNumber }}</td>
+            <td><a href="{{ path('owner_show', {id: o.id}) }}">{{ o.name }}</a></td>
+            <td>{{ o.contactPerson }}</td>
+            <td>{{ o.phone }}</td>
+            <td class="num">{{ o.properties|length }}</td>
+            <td>{{ o.status == 'ACTIVE' ? 'aktiv' : 'inaktiv' }}</td>
+        </tr>
+    {% endfor %}
+</table>
+<div class="btn-bar"><a href="{{ path('owner_new') }}" class="btn">Neu</a></div>
+{% endblock %}

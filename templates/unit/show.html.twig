@@ -1,0 +1,112 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as m %}
+{% set section = 'stammdaten' %}
+
+{% block title %}Einheit {{ unit.unitNumber }}{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Objektverwaltung &gt; Mieteinheiten &gt; Einheit {{ unit.id }}</div>
+<h2>Einheit {{ unit.id }} <a href="{{ path('unit_edit', {id: unit.id}) }}" class="btn btn-sm">Ändern</a></h2>
+
+<table class="table detail">
+    <tr><th>Objekt:</th><td><a href="{{ path('property_show', {id: unit.building.property.id}) }}">{{ unit.building.property.name }}</a></td></tr>
+    <tr><th>Gebäude:</th><td>{{ unit.building.name }}</td></tr>
+    <tr><th>Einheit:</th><td>{{ unit.unitNumber }} ({{ unit.typeLabel }}, {{ unit.floor }}. OG)</td></tr>
+    <tr><th>Fläche:</th><td>{{ unit.area|number_format(2, ',', '.') }} m²</td></tr>
+    <tr><th>Kaltmiete (Angebot):</th><td>{{ m.money(unit.coldRent) }}</td></tr>
+    <tr><th>NK-Vorauszahlung:</th><td>{{ m.money(unit.serviceChargeAdvance) }}</td></tr>
+    <tr><th>Status:</th><td><span class="status {{ unit.cssClass }}">{{ m.unit_status(unit.status) }}</span></td></tr>
+    <tr><th>zuletzt geändert:</th><td>{{ unit.lastModified ? unit.lastModified|date('d.m.Y H:i') }} {{ unit.lastModifiedBy }}</td></tr>
+</table>
+
+<ul class="tabs">
+    <li><a href="#mietvertrag">Mietvertrag</a></li>
+    <li><a href="#mieter">Mieter</a></li>
+    <li><a href="#vorgaenge">Vorgänge</a></li>
+    <li><a href="#buchungen">Buchungen</a></li>
+    <li><a href="#vermietung">Vermietung</a></li>
+</ul>
+
+<div class="tab-body">
+    <h3 id="mietvertrag">Mietverhältnisse</h3>
+    <table class="table table-striped">
+        <tr><th>Vertrag</th><th>Mieter</th><th>Beginn</th><th>Ende</th><th class="num">Kaltmiete</th><th>Status</th></tr>
+        {% for t in unit.tenancies %}
+            <tr>
+                <td><a href="{{ path('tenancy_show', {id: t.id}) }}">{{ t.contractNumber }}</a></td>
+                <td>{{ t.tenantNames }}</td>
+                <td>{{ t.startDate|date('d.m.Y') }}</td>
+                <td>{{ t.endDate ? t.endDate|date('d.m.Y') }}</td>
+                <td class="num">{{ m.money(t.coldRent) }}</td>
+                <td>{{ m.tenancy_status(t.status) }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6">keine</td></tr>
+        {% endfor %}
+    </table>
+
+    {% if unit.status == 'AVAILABLE' %}
+        <a href="{{ path('tenancy_new', {unit: unit.id}) }}" class="btn">Mietvertrag anlegen</a>
+    {% endif %}
+
+    <h3 id="mieter">Aktuelle Mieter</h3>
+    {% if current %}
+        {% for tenant in current.tenants %}
+            <a href="{{ path('tenant_show', {id: tenant.id}) }}">{{ tenant.fullName }}</a>{{ not loop.last ? ', ' }}
+        {% endfor %}
+    {% else %}
+        <p>- keine -</p>
+    {% endif %}
+
+    <h3 id="vorgaenge">Vorgänge</h3>
+    <table class="table table-striped">
+        <tr><th>Nr.</th><th>Datum</th><th>Kategorie</th><th>Beschreibung</th><th>Status</th></tr>
+        {% for i in issues %}
+            <tr>
+                <td><a href="{{ path('issue_show', {id: i.id}) }}">{{ i.issueNumber }}</a></td>
+                <td>{{ i.createdAt|date('d.m.Y') }}</td>
+                <td>{{ i.categoryLabel }}</td>
+                <td>{{ i.description|slice(0, 60) }}</td>
+                <td>{{ i.statusLabel }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="5">keine</td></tr>
+        {% endfor %}
+    </table>
+    <a href="{{ path('issue_new', {unit: unit.id}) }}" class="btn btn-sm">Meldung erfassen</a>
+
+    <h3 id="buchungen">Sollstellungen (aktueller Vertrag)</h3>
+    <table class="table table-striped table-condensed">
+        <tr><th>Monat</th><th>Position</th><th class="num">Betrag</th><th>Status</th></tr>
+        {% for c in charges|slice(-6) %}
+            <tr><td>{{ c.month }}</td><td>{{ c.positionLabel }}</td><td class="num">{{ m.money(c.amount) }}</td><td>{{ c.status }}</td></tr>
+        {% else %}
+            <tr><td colspan="4">keine</td></tr>
+        {% endfor %}
+    </table>
+
+    <h3 id="vermietung">Interessenten</h3>
+    <table class="table table-striped table-condensed">
+        <tr><th>Name</th><th>Anfrage</th><th>Status</th></tr>
+        {% for p in prospects %}
+            <tr><td>{{ p.name }}</td><td>{{ p.requestDate|date('d.m.Y') }}</td><td>{{ p.statusLabel }}</td></tr>
+        {% else %}
+            <tr><td colspan="3">keine</td></tr>
+        {% endfor %}
+    </table>
+
+    <h3>Termine</h3>
+    <table class="table table-striped table-condensed">
+        {% for a in appointments %}
+            <tr><td>{{ a.startsAt|date('d.m.Y H:i') }}</td><td>{{ a.title }}</td></tr>
+        {% else %}
+            <tr><td>keine</td></tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="btn-bar">
+    <a href="{{ path('unit_edit', {id: unit.id}) }}" class="btn">Bearbeiten</a>
+    <a href="{{ path('unit_index') }}" class="btn">Zurück</a>
+</div>
+{% endblock %}

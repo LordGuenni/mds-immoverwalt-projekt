@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+{% set section = 'vermietung' %}
+
+{% block title %}Besichtigungen{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Vermietung &gt; Besichtigungen</div>
+<h2>Besichtigungen</h2>
+<table class="table table-striped">
+    <tr><th>Termin</th><th>Einheit</th><th>Interessent</th><th>Mitarbeiter</th><th>Status</th><th>Bemerkung</th></tr>
+    {% for v in viewings %}
+        <tr>
+            <td>{{ v.dateTime|date('d.m.Y H:i') }}</td>
+            <td><a href="{{ path('unit_show', {id: v.unit.id}) }}">{{ v.unit }}</a></td>
+            <td>{{ v.prospect.name }}</td>
+            <td>{{ v.employee }}</td>
+            <td>{{ v.status }}</td>
+            <td>{{ v.remark }}</td>
+        </tr>
+    {% endfor %}
+</table>
+<div class="btn-bar"><a href="{{ path('viewing_new') }}" class="btn">Neu</a></div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'base.html.twig' %}
+{% set section = 'stammdaten' %}
+
+{% block title %}Mieter{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Stammdaten &gt; Mieter</div>
+<h2>Mieter</h2>
+<form method="get" class="btn-bar">
+    Suche: <input type="text" name="q" value="{{ q }}"> <button class="btn btn-sm">Suchen</button>
+</form>
+<table class="table table-striped">
+    <tr><th>Name</th><th>E-Mail</th><th>Telefon</th><th>Verträge</th></tr>
+    {% for t in tenants %}
+        <tr>
+            <td><a href="{{ path('tenant_show', {id: t.id}) }}">{{ t.lastName }}, {{ t.firstName }}</a></td>
+            <td>{{ t.email }}</td>
+            <td>{{ t.phone }}</td>
+            <td>{% for tn in t.tenancies %}<a href="{{ path('tenancy_show', {id: tn.id}) }}">{{ tn.contractNumber }}</a> {% endfor %}</td>
+        </tr>
+    {% endfor %}
+</table>
+<div class="btn-bar"><a href="{{ path('tenant_new') }}" class="btn">Neu</a></div>
+{% endblock %}

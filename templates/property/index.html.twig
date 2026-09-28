@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+{% set section = 'stammdaten' %}
+
+{% block title %}Objekte{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Stammdaten &gt; Objekte</div>
+<h2>Objekte</h2>
+<table class="table table-striped">
+    <tr><th>Nr.</th><th>Bezeichnung</th><th>Anschrift</th><th>Eigentümer</th><th>Gebäude</th><th>Baujahr</th></tr>
+    {% for p in properties %}
+        <tr>
+            <td>{{ p.propertyNumber }}</td>
+            <td><a href="{{ path('property_show', {id: p.id}) }}">{{ p.name }}</a></td>
+            <td>{{ p.addressLine }}</td>
+            <td>{{ p.owner.name }}</td>
+            <td class="num">{{ p.buildings|length }}</td>
+            <td>{{ p.constructionYear }}</td>
+        </tr>
+    {% endfor %}
+</table>
+<div class="btn-bar"><a href="{{ path('property_new') }}" class="btn">Neu</a></div>
+{% endblock %}

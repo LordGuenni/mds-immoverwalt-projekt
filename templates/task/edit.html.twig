@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+{% set section = 'vorgaenge' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Vorgänge &gt; Aufgaben &gt; {{ title }}</div>
+<h2>{{ title }}</h2>
+
+<div class="form-box">
+    {{ form_start(form) }}
+    {{ form_widget(form) }}
+    <div class="btn-bar">
+        <button type="submit" class="btn btn-primary">Speichern</button>
+        {% if task.issue %}
+            <a href="{{ path('issue_show', {id: task.issue.id}) }}" class="btn">zur Meldung</a>
+        {% endif %}
+        <a href="{{ path('task_index') }}" class="btn">Zurück</a>
+    </div>
+    {{ form_end(form) }}
+</div>
+
+{% if task.id %}
+    <div class="btn-bar">
+        {% if task.open %}
+            <form method="post" action="{{ path('task_done', {id: task.id}) }}" class="inline">
+                <button class="btn">Als erledigt markieren</button>
+            </form>
+        {% else %}
+            <form method="post" action="{{ path('task_reopen', {id: task.id}) }}" class="inline">
+                Begründung: <input type="text" name="reason" size="40">
+                <button class="btn">Wieder eröffnen</button>
+            </form>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}

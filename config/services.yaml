@@ -1,0 +1,20 @@
+parameters:
+    # Verwaltungsgebühr in Prozent der Mieteinnahmen (Eigentümerabrechnung)
+    app.management_fee_percent: 5
+    # Kündigungsfrist in Monaten (siehe auch TenancyController::terminate)
+    app.notice_period_months: 3
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        bind:
+            $managementFeePercent: '%app.management_fee_percent%'
+
+    App\:
+        resource: '../src/'
+        exclude: '../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}'
+
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']

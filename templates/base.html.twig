@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Immobilienverwaltung{% endblock %} - ImmoVerwalt</title>
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+</head>
+<body>
+{% set section = section|default('') %}
+<div id="header">
+    <span class="brand">Immobilienverwaltung</span>
+    {% if app.user %}
+        <span class="user">{{ app.user.fullName }} | <a href="{{ path('app_logout') }}">Abmelden</a></span>
+    {% endif %}
+</div>
+
+{% if app.user %}
+<div id="mainnav">
+    <a href="{{ path('dashboard') }}" class="{{ section == '' ? 'active' }}">Start</a><a href="{{ path('unit_index') }}" class="{{ section == 'stammdaten' ? 'active' }}">Stammdaten</a><a href="{{ path('tenancy_index') }}" class="{{ section == 'vermietung' ? 'active' }}">Vermietung</a><a href="{{ path('issue_index') }}" class="{{ section == 'vorgaenge' ? 'active' }}">Vorgänge</a><a href="{{ path('charge_index') }}" class="{{ section == 'abrechnung' ? 'active' }}">Abrechnung</a><a href="{{ path('report_vacancy') }}" class="{{ section == 'berichte' ? 'active' }}">Berichte</a>{% if is_granted('ROLE_ADMIN') %}<a href="{{ path('admin_users') }}" class="{{ section == 'verwaltung' ? 'active' }}">Verwaltung</a>{% endif %}
+</div>
+
+<div id="subnav">
+    {% set route = app.request.attributes.get('_route') %}
+    {% if section == 'stammdaten' %}
+        <a href="{{ path('owner_index') }}" class="{{ route starts with 'owner' ? 'active' }}">Eigentümer</a>
+        <a href="{{ path('property_index') }}" class="{{ route starts with 'property' or route starts with 'building' ? 'active' }}">Objekte</a>
+        <a href="{{ path('unit_index') }}" class="{{ route starts with 'unit' ? 'active' }}">Mieteinheiten</a>
+        <a href="{{ path('tenant_index') }}" class="{{ route starts with 'tenant' ? 'active' }}">Mieter</a>
+        <a href="{{ path('provider_index') }}" class="{{ route starts with 'provider' ? 'active' }}">Dienstleister</a>
+    {% elseif section == 'vermietung' %}
+        <a href="{{ path('prospect_index') }}" class="{{ route starts with 'prospect' ? 'active' }}">Interessenten</a>
+        <a href="{{ path('viewing_index') }}" class="{{ route starts with 'viewing' ? 'active' }}">Besichtigungen</a>
+        <a href="{{ path('tenancy_index') }}" class="{{ route starts with 'tenancy' or route starts with 'handover' ? 'active' }}">Mietverhältnisse</a>
+    {% elseif section == 'vorgaenge' %}
+        <a href="{{ path('issue_index') }}" class="{{ route starts with 'issue' ? 'active' }}">Meldungen</a>
+        <a href="{{ path('task_index') }}" class="{{ route starts with 'task' ? 'active' }}">Aufgaben</a>
+        <a href="{{ path('appointment_index') }}" class="{{ route starts with 'appointment' ? 'active' }}">Termine</a>
+    {% elseif section == 'abrechnung' %}
+        <a href="{{ path('charge_index') }}" class="{{ route starts with 'charge' ? 'active' }}">Sollstellungen</a>
+        <a href="{{ path('account_index') }}" class="{{ route starts with 'account' ? 'active' }}">Mieterkonten</a>
+        <a href="{{ path('booking_index') }}" class="{{ route starts with 'booking' ? 'active' }}">Buchungen</a>
+        <a href="{{ path('owner_statement') }}" class="{{ route == 'owner_statement' ? 'active' }}">Eigentümerabrechnung</a>
+    {% elseif section == 'berichte' %}
+        <a href="{{ path('report_vacancy') }}" class="active">Leerstand</a>
+    {% elseif section == 'verwaltung' %}
+        <a href="{{ path('admin_users') }}" class="active">Benutzer</a>
+    {% else %}
+        &nbsp;
+    {% endif %}
+</div>
+{% endif %}
+
+<div id="content">
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ type == 'error' ? 'danger' : type }}">{{ message }}</div>
+        {% endfor %}
+    {% endfor %}
+    {% block body %}{% endblock %}
+</div>
+<div id="footer">ImmoVerwalt 3.8.2 &middot; &copy; Hausverwaltung &middot; interne Anwendung</div>
+</body>
+</html>

@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as m %}
+
+{% block body %}
+<h2>Übersicht</h2>
+
+<table class="table detail" style="width:auto">
+    <tr><th>Mieteinheiten gesamt</th><td class="num">{{ unitCount }}</td></tr>
+    <tr><th>davon frei</th><td class="num"><a href="{{ path('unit_index', {status: 'AVAILABLE'}) }}">{{ available }}</a></td></tr>
+    <tr><th>davon gekündigt</th><td class="num"><a href="{{ path('unit_index', {status: 'NOTICE_GIVEN'}) }}">{{ noticeGiven }}</a></td></tr>
+    <tr><th>laufende Mietverhältnisse</th><td class="num">{{ tenancyCount }}</td></tr>
+</table>
+
+<div class="cols">
+    <div class="col">
+        <div class="box">
+            <h3>Offene Meldungen</h3>
+            <table class="table table-striped table-condensed">
+                <tr><th>Nr.</th><th>Objekt / Einheit</th><th>Beschreibung</th><th>Status</th></tr>
+                {% for issue in openIssues %}
+                    <tr>
+                        <td><a href="{{ path('issue_show', {id: issue.id}) }}">{{ issue.issueNumber }}</a></td>
+                        <td>{{ issue.property.name }}{% if issue.unit %}, {{ issue.unit.unitNumber }}{% endif %}</td>
+                        <td class="prio-{{ issue.priority }}">{{ issue.description|slice(0, 45) }}{{ issue.description|length > 45 ? '...' }}</td>
+                        <td>{{ issue.statusLabel }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4">keine</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    <div class="col">
+        <div class="box">
+            <h3>Nächste Termine</h3>
+            <table class="table table-striped table-condensed">
+                <tr><th>Datum</th><th>Termin</th><th>Bezug</th></tr>
+                {% for a in appointments %}
+                    <tr><td>{{ a.startsAt|date('d.m.Y H:i') }}</td><td>{{ a.title }}</td><td>{{ a.refTypeLabel }}</td></tr>
+                {% else %}
+                    <tr><td colspan="3">keine</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div class="box">
+            <h3>Offene Aufgaben</h3>
+            <table class="table table-striped table-condensed">
+                <tr><th>Nr.</th><th>Titel</th><th>fällig</th><th>Status</th></tr>
+                {% for t in openTasks %}
+                    <tr>
+                        <td><a href="{{ path('task_edit', {id: t.id}) }}">{{ t.taskNumber }}</a></td>
+                        <td>{{ t.title }}</td>
+                        <td>{{ t.dueDate ? t.dueDate|date('d.m.Y') }}</td>
+                        <td>{{ t.statusLabel }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

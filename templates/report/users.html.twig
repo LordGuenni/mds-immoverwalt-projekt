@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+{% set section = 'verwaltung' %}
+
+{% block title %}Benutzer{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Verwaltung &gt; Benutzer</div>
+<h2>Benutzer</h2>
+<table class="table table-striped">
+    <tr><th>Benutzername</th><th>Name</th><th>E-Mail</th><th>Rollen</th><th>aktiv</th></tr>
+    {% for u in users %}
+        <tr>
+            <td>{{ u.username }}</td>
+            <td>{{ u.fullName }}</td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.roles|join(', ') }}</td>
+            <td>{{ u.active ? 'ja' : 'nein' }}</td>
+        </tr>
+    {% endfor %}
+</table>
+<p class="text-muted">Benutzerverwaltung erfolgt derzeit direkt in der Datenbank (Ticket #145).</p>
+{% endblock %}

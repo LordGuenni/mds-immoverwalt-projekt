@@ -1,0 +1,45 @@
+{% extends 'base.html.twig' %}
+{% set section = 'vorgaenge' %}
+
+{% block title %}Meldungen{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Vorgänge &gt; Meldungen</div>
+<h2>Meldungen zur Mietsache</h2>
+<div class="btn-bar">
+    Anzeigen:
+    <a href="{{ path('issue_index', {filter: 'open'}) }}">offene</a> |
+    {% for label, key in statuses %}<a href="{{ path('issue_index', {filter: key}) }}">{{ label }}</a> | {% endfor %}
+    <a href="{{ path('issue_index', {filter: 'all'}) }}">alle</a>
+    &nbsp; <a href="{{ path('issue_new') }}" class="btn btn-sm">Neue Meldung</a>
+</div>
+
+<form method="post" action="{{ path('issue_bulk') }}">
+<table class="table table-striped">
+    <tr><th></th><th>Nr.</th><th>Datum</th><th>Objekt</th><th>Einheit</th><th>Kategorie</th><th>Beschreibung</th><th>Prio</th><th>Status</th><th>Aufgaben</th></tr>
+    {% for i in issues %}
+        <tr>
+            <td><input type="checkbox" name="ids[]" value="{{ i.id }}"></td>
+            <td><a href="{{ path('issue_show', {id: i.id}) }}">{{ i.issueNumber }}</a></td>
+            <td>{{ i.createdAt|date('d.m.Y') }}</td>
+            <td>{{ i.property.name }}</td>
+            <td>{{ i.unit ? i.unit.unitNumber }}</td>
+            <td>{{ i.categoryLabel }}</td>
+            <td>{{ i.description|slice(0, 50) }}{{ i.description|length > 50 ? '...' }}</td>
+            <td class="prio-{{ i.priority }}">{{ i.priorityLabel }}</td>
+            <td>{{ i.statusLabel }}</td>
+            <td class="num">{{ i.tasks|length }}</td>
+        </tr>
+    {% else %}
+        <tr><td colspan="10">keine Meldungen</td></tr>
+    {% endfor %}
+</table>
+<div class="btn-bar">
+    Markierte auf Status
+    <select name="status">
+        {% for label, key in statuses %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-sm">setzen</button>
+</div>
+</form>
+{% endblock %}

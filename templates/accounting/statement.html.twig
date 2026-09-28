@@ -1,0 +1,45 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as m %}
+{% set section = 'abrechnung' %}
+
+{% block title %}Eigentümerabrechnung{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Abrechnung &gt; Eigentümerabrechnung</div>
+<h2>Eigentümerabrechnung</h2>
+
+<form method="get" class="btn-bar">
+    Objekt:
+    <select name="property">
+        <option value="">- bitte wählen -</option>
+        {% for p in properties %}
+            <option value="{{ p.id }}" {{ propertyId == p.id ? 'selected' }}>{{ p.name }} ({{ p.owner.name }})</option>
+        {% endfor %}
+    </select>
+    Monat: <input type="month" name="month" value="{{ month }}">
+    <button class="btn btn-sm">Abrechnung erstellen</button>
+</form>
+
+{% if statement %}
+    <div class="box" style="max-width:560px">
+        <h3>Abrechnung {{ statement.month }}</h3>
+        <table class="table detail" style="min-width:0;width:100%">
+            <tr><th>Eigentümer</th><td>{{ statement.owner.name }}</td></tr>
+            <tr><th>Objekt</th><td>{{ statement.property.name }}</td></tr>
+            <tr><th>Zeitraum</th><td>{{ statement.month }}</td></tr>
+        </table>
+        <table class="table" style="width:100%">
+            {% for b in statement.bookings %}
+                <tr><td>{{ b.description ?: b.categoryLabel }}</td><td class="num">{{ m.money(b.signedAmount) }}</td></tr>
+            {% else %}
+                <tr><td colspan="2">keine Buchungen im Zeitraum</td></tr>
+            {% endfor %}
+            {% if statement.calculatedFee > 0 %}
+                <tr><td>Verwaltungsgebühr (berechnet)</td><td class="num">{{ m.money(-statement.calculatedFee) }}</td></tr>
+            {% endif %}
+            <tr><th>Ergebnis</th><th class="num">{{ m.money(statement.result) }}</th></tr>
+        </table>
+        <p class="no-print"><button class="btn" onclick="window.print()">Drucken</button></p>
+    </div>
+{% endif %}
+{% endblock %}

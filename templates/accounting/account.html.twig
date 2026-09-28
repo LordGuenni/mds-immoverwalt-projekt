@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as m %}
+{% set section = 'abrechnung' %}
+
+{% block title %}Mieterkonto {{ tenancy.contractNumber }}{% endblock %}
+
+{% block body %}
+<div class="breadcrumb">Abrechnung &gt; Mieterkonten &gt; {{ tenancy.contractNumber }}</div>
+<h2>Mieterkonto {{ tenancy.contractNumber }} - {{ tenancy.tenantNames }}</h2>
+<p>{{ tenancy.unit }} &middot; Monatsmiete {{ m.money(tenancy.totalRent) }}
+   &middot; <a href="{{ path('tenancy_show', {id: tenancy.id}) }}">zum Vertrag</a></p>
+
+<table class="table table-striped" style="width:auto">
+    <tr><th>Monat</th><th class="num">Soll</th><th class="num">Zahlung</th><th class="num">offener Saldo</th></tr>
+    {% for row in account %}
+        <tr>
+            <td>{{ row.month }}</td>
+            <td class="num">{{ m.money(row.debit) }}</td>
+            <td class="num">{{ m.money(row.credit) }}</td>
+            <td class="num">{{ m.money(row.balance) }}</td>
+        </tr>
+    {% endfor %}
+</table>
+
+<div class="cols">
+    <div class="col">
+        <h3>Sollstellungen</h3>
+        <table class="table table-striped table-condensed">
+            <tr><th>Monat</th><th>Position</th><th>fällig</th><th class="num">Betrag</th><th>Status</th></tr>
+            {% for c in charges %}
+                <tr><td>{{ c.month }}</td><td>{{ c.positionLabel }}</td><td>{{ c.dueDate|date('d.m.Y') }}</td><td class="num">{{ m.money(c.amount) }}</td><td>{{ c.status }}</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="col">
+        <h3>Zahlungen</h3>
+        <table class="table table-striped table-condensed">
+            <tr><th>Datum</th><th class="num">Betrag</th><th>Verwendungszweck</th></tr>
+            {% for p in payments %}
+                <tr><td>{{ p.paymentDate|date('d.m.Y') }}</td><td class="num">{{ m.money(p.amount) }}</td><td>{{ p.reference }}</td></tr>
+            {% endfor %}
+        </table>
+
+        <h3>Zahlung erfassen</h3>
+        <div class="form-box">
+            {{ form_start(form) }}
+            {{ form_widget(form) }}
+            <button class="btn btn-primary">Zahlung buchen</button>
+            {{ form_end(form) }}
+        </div>
+    </div>
+</div>
+{% endblock %}
