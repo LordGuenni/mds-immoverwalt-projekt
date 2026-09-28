@@ -9,13 +9,17 @@ für Mieter und Eigentümer.
 ## Start mit Docker
 
 Voraussetzung: [Docker Desktop](https://www.docker.com/products/docker-desktop/) (unter Windows mit WSL 2)
-und Git. PHP muss lokal **nicht** installiert sein.
+und [Git](https://git-scm.com/). PHP muss lokal **nicht** installiert sein.
 
 ```bash
 git clone https://github.com/wolpert-coniant/thb_immoverwalt.git
 cd thb_immoverwalt
 docker compose up -d
 ```
+
+Ohne Git: auf GitHub **Code > Download ZIP** wählen, das ZIP entpacken und im entpackten Ordner
+`docker compose up -d` ausführen. Neuere Fassungen müssen Sie dann erneut herunterladen - mit Git
+genügt `git pull`.
 
 Beim ersten Start lädt Docker ein fertiges Image mit allen PHP-Abhängigkeiten, legt das
 Datenbankschema an und lädt Beispieldaten. Den Fortschritt zeigt:
