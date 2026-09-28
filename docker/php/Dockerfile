@@ -17,7 +17,7 @@ WORKDIR /var/www/html
 # Start in das leere Volume - der Start braucht dann kein Internet.
 COPY composer.json composer.lock ./
 RUN composer install --prefer-dist --no-progress --no-interaction --no-scripts \
-    && md5sum composer.lock | cut -d' ' -f1 > vendor/.composer-lock.md5 \
+    && tr -d '\r' < composer.lock | md5sum | cut -d' ' -f1 > vendor/.composer-lock.md5 \
     && mkdir -p var/cache var/log
 
 ENTRYPOINT ["entrypoint"]
