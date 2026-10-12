@@ -16,7 +16,7 @@ WORKDIR /var/www/html
 # Abhängigkeiten gleich ins Image legen. Docker kopiert vendor/ beim ersten
 # Start in das leere Volume - der Start braucht dann kein Internet.
 COPY composer.json composer.lock ./
-RUN composer install --prefer-dist --no-progress --no-interaction --no-scripts \
+RUN composer install --prefer-dist --no-progress --no-interaction --no-scripts --no-cache \
     && tr -d '\r' < composer.lock | md5sum | cut -d' ' -f1 > vendor/.composer-lock.md5 \
     && mkdir -p var/cache var/log
 

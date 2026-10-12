@@ -7,7 +7,7 @@ name: immoverwalt
 services:
   php:
     # fertiges Image von GitHub; wird nur lokal gebaut, wenn es nicht geladen werden kann
-    image: ghcr.io/wolpert-coniant/immoverwalt-php:latest
+    image: ghcr.io/lordguenni/immoverwalt-php:latest
     build:
       context: .
       dockerfile: docker/php/Dockerfile
