@@ -36,9 +36,12 @@ Dieser Katalog ist die erste Fassung des Fachmodells und wird im Semester weiter
 
 ## REGEL-02
 
-- **Regel:**
-- **Bereich:**
+- **Regel:** Ein Issue kann nur geschlossen werden wenn alle Unteraufgaben abgeschlossen sind, und der Abschluss muss geloggt werden
+- **Bereich:** Meldungen/Aufgaben
 - **Fundstellen:**
-- **Gegenbeobachtung:**
-- **Status:**
-- **Offene Frage:**
+  - `src/Service/IssueService.php::closeIssue()`
+  - `src/Controller/IssueController::close()`
+  - `src/templates/issue/show.html.twig`
+- **Gegenbeobachtung:** Wenn im Template die Status verändern funktion aufgerufen wird wird IssueController::status() aufgerufen welcher keine Prüfung ausführt und das Issue direkt schließen kann, genauso bei der IssueController::bulk() funktion
+- **Status:** widersprüchlich
+- **Offene Frage:** Darf es ein "Force" close geben oder müssen die Prüfungen immer stattfinden ?
