@@ -120,10 +120,38 @@ Reine technische Funktionen (Login/Logout, interne Firewall-Weiterleitungen, rei
 
 ---
 
-## 4. Ausgeklammerte Technik und reine Navigation
+## 4. Ausgeklammerte Technik und reine Navigation (Lückenlose Zuordnung aller 64 Routen)
 
-Die folgenden Routen wurden nicht als eigene fachliche Anwendungsfälle modelliert:
-- **`app_login`, `app_logout`**: Reine Authentifizierungsinfrastruktur der Symfony-Firewall; kein fachlicher Geschäftsvorfall der Hausverwaltung.
-- **`admin_users`**: Reine Systembenutzer-Liste für Systemadministratoren.
-- **`dashboard`**: Reines Informationsportal zur aggregierten Übersicht über Bestände und Termine.
-- **Listenansichten (`*_index`) und Detailseiten (`*_show`)**: Dienen als Navigations- und Einstiegspunkte für die Aktionen, stellen jedoch für sich allein keinen zustandsändernden Geschäftsvorfall dar.
+Im Sinne des Leitsatzes *„Systematisch statt Herumklicken: Jede Route ist eine Aktion – 64 im Altsystem“* sind alle 64 Routen des Altsystems vollständig abgebildet:
+- **41 Aktions-Routen** lösen fachliche Zustandsänderungen, Berechnungen oder Dokumentenerzeugungen aus und bilden die **29 Anwendungsfälle (AF-01 bis AF-29)**.
+- **23 passive bzw. rein technische Routen** stellen Authentifizierung, Administration oder reine Lese-/Filtereinstiege dar und wurden wie folgt eingeordnet:
+
+| Route | Typ / Kategorie | Fachliche Begründung & Zuordnung |
+|---|---|---|
+| `app_login` | Authentifizierung | Symfony-Firewall-Anmeldung; rein technische Sicherheitsinfrastruktur. |
+| `app_logout` | Authentifizierung | Beendigung der Benutzersitzung in der Firewall. |
+| `admin_users` | Administration | Verwaltung interner Benutzerkonten durch Administratoren. |
+| `dashboard` | Informationsportal | Aggregierte Leseansicht von Beständen und Terminen ohne eigene Fachaktion. |
+| `prospect_index` | Listenansicht (Vermietung) | Übersicht der Mietinteressenten; passiver Einstieg für AF-01 bis AF-03. |
+| `viewing_index` | Listenansicht (Vermietung) | Übersicht geplanter Besichtigungen; passiver Einstieg für AF-02. |
+| `tenancy_index` | Listenansicht (Vermietung) | Übersicht aller Mietverhältnisse; passiver Einstieg für AF-04 bis AF-09. |
+| `owner_index` | Listenansicht (Stammdaten) | Liste aller Eigentümer; passiver Einstieg für AF-13. |
+| `owner_show` | Detailansicht (Stammdaten) | Reine Anzeige der Eigentümerstammdaten. |
+| `property_index` | Listenansicht (Stammdaten) | Liste der Liegenschaften; passiver Einstieg für AF-10. |
+| `property_show` | Detailansicht (Stammdaten) | Reine Anzeige von Liegenschaftsdaten und Gebäuden. |
+| `unit_index` | Listenansicht (Stammdaten) | Liste der Mieteinheiten; passiver Einstieg für AF-12. |
+| `unit_show` | Detailansicht (Stammdaten) | Reine Anzeige von Mieteinheit und aktuellem Vertrag. |
+| `tenant_index` | Listenansicht (Stammdaten) | Mieterliste mit Namenssuche; passiver Einstieg für AF-14. |
+| `tenant_show` | Detailansicht (Stammdaten) | Reine Anzeige von Mieter- und Vertragsdaten. |
+| `provider_index` | Listenansicht (Stammdaten) | Handwerkerliste; passiver Einstieg für AF-15. |
+| `issue_index` | Listenansicht (Vorgänge) | Filterbare Meldungsliste; passiver Einstieg für AF-16 bis AF-20. |
+| `issue_show` | Detailansicht (Vorgänge) | Anzeige des Meldungskontexts; Leserahmen für AF-17 bis AF-20. |
+| `task_index` | Listenansicht (Vorgänge) | Aufgabenliste nach Fälligkeit; passiver Einstieg für AF-21 bis AF-23. |
+| `appointment_index` | Listenansicht (Termine) | Kalenderliste anstehender Termine; passiver Einstieg für AF-24. |
+| `charge_index` | Listenansicht (Abrechnung) | Monatsliste der Sollstellungen; passiver Einstieg für AF-25. |
+| `account_index` | Listenansicht (Abrechnung) | Übersicht aller Mieterkonten mit Saldo; passiver Einstieg für AF-26. |
+| `booking_index` | Listenansicht (Abrechnung) | Journal der Liegenschaftsbuchungen; passiver Einstieg für AF-27. |
+
+**Gesamtabgleich:**  
+$$\mathbf{41\text{ Aktions-Routen (AF-01 bis AF-29)}} + \mathbf{23\text{ technische/passive Routen}} = \mathbf{64\text{ Routen des Altsystems}}$$
+
