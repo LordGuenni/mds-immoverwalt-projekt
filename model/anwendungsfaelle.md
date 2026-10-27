@@ -30,8 +30,8 @@ wurden weggelassen bzw. in Abschnitt 4 den Anwendungsfällen als Einstieg zugeor
 | **AF-04** | Mietverhältnis als Entwurf anlegen | Vermieter | Konditionen (Beginn, Miete, Kaution, Mieter) für eine freie oder reservierte Mieteinheit festlegen | `tenancy_new` | Vermietung |
 | **AF-05** | Mieter eines Mietverhältnisses ändern | Vermieter | Mieter zu einem Mietverhältnis hinzufügen oder daraus entfernen | `tenancy_tenant` | Vermietung |
 | **AF-06** | Mietverhältnis aktivieren | Vermieter | Unterschriebenes Mietverhältnis wirksam setzen, Mieteinheit vermieten, Einzug planen, erste Sollstellung erzeugen | `tenancy_activate` | Vermietung |
-| **AF-07** | Mietverhältnis kündigen | Verwalter | Kündigung mit Frist erfassen und die Rückgabe planen | `tenancy_terminate` | Vermietung |
-| **AF-08** | Mietverhältnis fristlos aufheben | Admin | Mietverhältnis zu einem Stichtag außerordentlich beenden und die Rückgabe planen | `tenancy_terminate_immediately` | Vermietung |
+| **AF-07** | Mietverhältnis kündigen | Verwalter | Kündigung mit Frist erfassen und den Auszug planen | `tenancy_terminate` | Vermietung |
+| **AF-08** | Mietverhältnis fristlos aufheben | Admin | Mietverhältnis zu einem Stichtag außerordentlich beenden und den Auszug planen | `tenancy_terminate_immediately` | Vermietung |
 | **AF-09** | Übergabe protokollieren | Verwalter | Einzug oder Auszug mit Zählerständen, Schlüsseln und Mängeln dokumentieren; bei Auszug Mietverhältnis beenden und Mieteinheit freigeben oder in Renovierung setzen | `handover_new` | Vermietung |
 | **AF-10** | Liegenschaft anlegen und pflegen | Verwalter | Liegenschaft mit Adresse, Eigentümer, Baujahr und Verwaltungsbeginn erfassen bzw. die Verwaltung beenden | `property_new`, `property_edit` | Bestand |
 | **AF-11** | Gebäude anlegen und pflegen | Verwalter | Gebäude innerhalb einer Liegenschaft erfassen oder bearbeiten | `building_new`, `building_edit` | Bestand |
@@ -105,7 +105,7 @@ sie sind der Vollständigkeit halber erfasst, werden in den folgenden Schritten 
 - **AF-04:** *Als Vermieter möchte ich ein Mietverhältnis als Entwurf anlegen, um die Konditionen vor der Unterschrift festzuhalten.*
 - **AF-05:** *Als Vermieter möchte ich die Mieter eines Mietverhältnisses ändern, um alle Vertragsparteien richtig abzubilden.*
 - **AF-06:** *Als Vermieter möchte ich ein unterschriebenes Mietverhältnis aktivieren, damit die Mieteinheit als vermietet gilt und der Einzug geplant wird.*
-- **AF-07:** *Als Verwalter möchte ich eine Kündigung erfassen, damit das Ende des Mietverhältnisses feststeht und die Rückgabe geplant wird.*
+- **AF-07:** *Als Verwalter möchte ich eine Kündigung erfassen, damit das Ende des Mietverhältnisses feststeht und der Auszug geplant wird.*
 - **AF-08:** *Als Administrator möchte ich ein Mietverhältnis fristlos aufheben, um es zu einem Stichtag zu beenden.*
 - **AF-09:** *Als Verwalter möchte ich Einzug und Auszug protokollieren, um Zählerstände, Schlüssel und Mängel festzuhalten.*
 - **AF-10:** *Als Verwalter möchte ich Liegenschaften mit Eigentümer und Adresse pflegen, damit Gebäude, Mieteinheiten und Abrechnungen eine Grundlage haben.*
