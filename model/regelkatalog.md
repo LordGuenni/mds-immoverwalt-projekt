@@ -36,231 +36,419 @@ Dieser Katalog ist die erste Fassung des Fachmodells und wird im Semester weiter
 
 ## REGEL-02
 
-- **Regel:** Ein Issue kann nur geschlossen werden wenn alle Unteraufgaben abgeschlossen sind, und der Abschluss muss geloggt werden
+- **Regel:** Eine Meldung darf nur geschlossen werden, wenn alle ihre Aufgaben erledigt oder abgebrochen sind.
 - **Bereich:** Meldungen/Aufgaben
 - **Fundstellen:**
-  - `src/Service/IssueService.php::closeIssue()`
-  - `src/Controller/IssueController::close()`
-  - `src/templates/issue/show.html.twig`
-- **Gegenbeobachtung:** Wenn im Template die Status verändern funktion aufgerufen wird wird IssueController::status() aufgerufen welcher keine Prüfung ausführt und das Issue direkt schließen kann, genauso bei der IssueController::bulk() funktion
+  - `src/Service/IssueService.php::closeIssue()` – bricht ab, wenn noch offene Aufgaben bestehen
+  - `src/Repository/TaskRepository.php::countOpenForIssue()` – zählt Aufgaben, die weder `DONE` noch `CANCELLED` sind
+  - `src/Controller/IssueController.php::close()` – zeigt die Fehlermeldung an
+  - `templates/issue/show.html.twig` – Button »Meldung schließen« nur, wenn die Meldung weder geschlossen noch abgelehnt ist
+- **Gegenbeobachtung:**
+  - `src/Controller/IssueController.php::status()` setzt jeden Status ohne Prüfung, auch »Geschlossen« bei offenen Aufgaben; die Auswahlliste in `templates/issue/show.html.twig` bietet »Geschlossen« an.
+  - `src/Controller/IssueController.php::bulk()` schließt mehrere Meldungen ohne Prüfung.
+  - `src/Controller/TaskController.php::reopen()` und das Statusfeld in `src/Form/TaskType.php` öffnen Aufgaben einer bereits geschlossenen Meldung wieder; danach hat eine geschlossene Meldung offene Aufgaben.
+  - `closeIssue()` schreibt keinen Eintrag in die Statushistorie (siehe REGEL-09).
 - **Status:** widersprüchlich
-- **Offene Frage:** Darf es ein "Force" close geben oder müssen die Prüfungen immer stattfinden ?
+- **Offene Frage:** Darf eine Meldung mit offenen Aufgaben in Ausnahmefällen geschlossen werden (z. B. durch Admin), und was passiert mit der Meldung, wenn eine ihrer Aufgaben wiedereröffnet wird?
 
 ---
 
 ## REGEL-03
 
-- **Regel:** Eine Meldung zu einer Einheit übernimmt automatisch die zugehörige Immobilie und den aktuellen Mieter der Einheit, wenn kein anderer Mieter angegeben ist.
+- **Regel:** Eine Meldung zu einer Mieteinheit gehört immer zur Liegenschaft dieser Mieteinheit; ist kein meldender Mieter angegeben, wird ein Mieter des aktuellen Mietverhältnisses eingetragen.
 - **Bereich:** Meldungen/Aufgaben
 - **Fundstellen:**
-  - `src/Service/IssueService.php::createIssue()` – setzt `property` aus der Einheit und ergänzt `tenant`, falls erforderlich
-  - `src/Controller/IssueController.php::new()` – trägt bei der Erfassung eine Einheit aus der Anfrage ein
-  - `src/Repository/TenancyRepository.php::findActiveForUnit()` – liefert das aktive Mietverhältnis für die automatische Zuordnung
-- **Gegenbeobachtung:** Wenn mehrere Mietverhältnisse aktiv sind oder der Mieter nicht eindeutig bestimmt werden kann, bleibt die Zuordnung unklar.
-- **Status:** bestätigt
-- **Offene Frage:** Wenn eine Einheit mehrere aktive Mietverhältnisse hat, welche Person gilt dann als meldende Partei?
+  - `src/Service/IssueService.php::createIssue()` – setzt die Liegenschaft aus der Mieteinheit und ergänzt den Mieter
+  - `src/Controller/IssueController.php::new()` – übernimmt Mieteinheit und Liegenschaft aus dem Aufruf
+  - `src/Repository/TenancyRepository.php::findActiveForUnit()` – liefert aktive und gekündigte Mietverhältnisse
+- **Gegenbeobachtung:**
+  - Eingetragen wird der erste Mieter des ersten gefundenen Mietverhältnisses; bei mehreren Mietern ist die Auswahl zufällig.
+  - Im Formular gewählte Liegenschaft wird beim Erfassen stillschweigend überschrieben; beim Bearbeiten (`IssueController::edit()`) dagegen nicht, dort können Liegenschaft und Mieteinheit auseinanderlaufen.
+- **Status:** widersprüchlich
+- **Offene Frage:** Welcher Mieter gilt bei mehreren Mietern als meldende Person? Darf eine Meldung nachträglich einer Mieteinheit einer anderen Liegenschaft zugeordnet werden?
 
 ---
 
 ## REGEL-04
 
-- **Regel:** Eine neu erfasste Meldung erhält automatisch einen verantwortlichen Bearbeiter, wenn kein zuständiger Mitarbeiter eingetragen ist.
+- **Regel:** Eine neue Meldung ohne Bearbeiter erhält den erfassenden Mitarbeiter als Bearbeiter.
 - **Bereich:** Meldungen/Aufgaben
 - **Fundstellen:**
-  - `src/Service/IssueService.php::createIssue()` – setzt den zuständigen Mitarbeiter auf den erfassenden Benutzer
-  - `src/Controller/IssueController.php::new()` – übergibt den aktuell angemeldeten Benutzer an den Dienst
-- **Gegenbeobachtung:** Die automatische Zuweisung ist nur dann sinnvoll, wenn der erfassende Nutzer tatsächlich der zuständige Sachbearbeiter ist.
+  - `src/Service/IssueService.php::createIssue()` – setzt den Bearbeiter auf den erfassenden Benutzer
+  - `src/Controller/IssueController.php::new()` – übergibt den angemeldeten Benutzer
+- **Gegenbeobachtung:** keine; über `IssueController::edit()` kann jeder angemeldete Benutzer den Bearbeiter ändern.
 - **Status:** bestätigt
-- **Offene Frage:** Wer darf bei einer Meldung einen anderen Bearbeiter übernehmen?
+- **Offene Frage:** Wer darf einer Meldung einen anderen Bearbeiter zuweisen?
 
 ---
 
 ## REGEL-05
 
-- **Regel:** Meldungen mit hoher Dringlichkeit werden direkt in die Prüfung übernommen und nicht erst in die normale Bearbeitung.
+- **Regel:** Eine dringende Meldung (Priorität »dringend«) wird bei der Erfassung sofort in Prüfung genommen.
 - **Bereich:** Meldungen/Aufgaben
 - **Fundstellen:**
-  - `src/Service/IssueService.php::createIssue()` – bei Priorität 4 oder höher setzt er den Status auf `IN_REVIEW`
-  - `src/Entity/Issue.php::PRIORITIES` – Priorität 4 wird als dringend definiert
-- **Gegenbeobachtung:** Die Regel ist nur für sehr dringende Meldungen definiert; weniger dringende Fälle bleiben im normalen Ablauf.
-- **Status:** bestätigt
-- **Offene Frage:** Welche Meldungen gelten fachlich als dringend und müssen sofort geprüft werden?
+  - `src/Service/IssueService.php::createIssue()` – setzt bei Priorität 4 den Meldungsstatus `IN_REVIEW`
+  - `src/Entity/Issue.php::PRIORITIES` – Priorität 4 heißt »dringend«
+- **Gegenbeobachtung:**
+  - Wird die Priorität später über `IssueController::edit()` auf »dringend« erhöht, ändert sich der Status nicht.
+  - Für die Fälligkeit von Aufgaben gilt eine andere Schwelle (ab »hoch«, siehe REGEL-08).
+- **Status:** zu klären
+- **Offene Frage:** Gilt die Regel nur bei der Erfassung oder bei jeder Erhöhung auf »dringend«? Ist »hoch« ebenfalls dringend?
 
 ---
 
 ## REGEL-06
 
-- **Regel:** Eine Meldung kann nur geschlossen werden, wenn keine offenen Aufgaben mehr mit ihr verknüpft sind.
-- **Bereich:** Meldungen/Aufgaben
-- **Fundstellen:**
-  - `src/Service/IssueService.php::closeIssue()` – prüft offene Aufgaben vor dem Schließen
-  - `src/Repository/TaskRepository.php::countOpenForIssue()` – zählt offene Aufgaben zur Meldung
-  - `src/Controller/IssueController.php::close()` – zeigt die fachliche Fehlermeldung an, wenn das Schließen nicht möglich ist
-- **Gegenbeobachtung:** Die Schließung ist blockiert, obwohl der fachliche Ablauf bereits als beendet gelten könnte.
-- **Status:** bestätigt
-- **Offene Frage:** Dürfen außerplanmäßige Abschlussfälle trotzdem ohne offene Aufgabe geschlossen werden?
+- **Zusammengeführt mit REGEL-02** (beschrieb dieselbe Regel; siehe Logbuch). Die Nummer bleibt frei, damit Verweise eindeutig bleiben.
 
 ---
 
 ## REGEL-07
 
-- **Regel:** Wenn zu einer Meldung eine Aufgabe angelegt wird, wird die Meldung in Bearbeitung gesetzt, sofern sie noch neu oder in Prüfung ist.
+- **Regel:** Wird zu einer neuen oder in Prüfung befindlichen Meldung eine Aufgabe angelegt, ist die Meldung danach in Bearbeitung.
 - **Bereich:** Meldungen/Aufgaben
 - **Fundstellen:**
-  - `src/Service/IssueService.php::createTaskFromIssue()` – setzt die Meldung bei `NEW` oder `IN_REVIEW` auf `IN_PROGRESS`
-  - `src/Controller/IssueController.php::addTask()` – legt die Aufgabe für die Meldung an
-- **Gegenbeobachtung:** Die fachliche Frage ist, ob jede neue Aufgabe automatisch als Bearbeitungsbeginn zählt oder nur bestimmte Aufgaben.
-- **Status:** bestätigt
-- **Offene Frage:** Müssen alle Aufgaben einer Meldung den Status der Meldung beeinflussen oder nur die erste zugewiesene Aufgabe?
+  - `src/Service/IssueService.php::createTaskFromIssue()` – setzt die Meldung von `NEW` oder `IN_REVIEW` auf `IN_PROGRESS`
+  - `src/Controller/IssueController.php::addTask()` – legt die Aufgabe aus der Meldung an
+- **Gegenbeobachtung:**
+  - Eine Aufgabe, die über »Neue Aufgabe« (`TaskController::new()` → `TaskService::save()`) mit Bezug zur Meldung angelegt wird, ändert den Meldungsstatus nicht.
+  - Der Statuswechsel wird nicht in der Statushistorie festgehalten (siehe REGEL-09).
+- **Status:** widersprüchlich
+- **Offene Frage:** Soll jede Aufgabe zu einer Meldung die Meldung in Bearbeitung setzen, unabhängig vom Weg, auf dem sie angelegt wird?
 
 ---
 
 ## REGEL-08
 
-- **Regel:** Eine Aufgabe, die aus einer Meldung entsteht, übernimmt die Priorität der Meldung und erhält je nach Dringlichkeit eine passende Frist.
+- **Regel:** Eine Aufgabe aus einer Meldung übernimmt deren Priorität und ist bei Priorität »hoch« oder »dringend« in 2 Tagen, sonst in 14 Tagen fällig.
 - **Bereich:** Meldungen/Aufgaben
 - **Fundstellen:**
-  - `src/Service/IssueService.php::createTaskFromIssue()` – kopiert Priorität und setzt die Frist abhängig von der Dringlichkeit
-  - `src/Entity/Issue.php::PRIORITIES` – definiert die Prioritätsstufen
-- **Gegenbeobachtung:** Die Frist ist nur als grobe Arbeitsregel modelliert und nicht als fachlich verbindliche Vertragsfrist.
+  - `src/Service/IssueService.php::createTaskFromIssue()` – übernimmt die Priorität und setzt die Fälligkeit (`+2 days` ab Priorität 3, sonst `+14 days`)
+  - `src/Entity/Issue.php::PRIORITIES` – Prioritätsstufen
+- **Gegenbeobachtung:**
+  - Über »Neue Aufgabe« (`TaskController::new()`) gibt es weder übernommene Priorität noch Fälligkeit.
+  - Ändert sich die Priorität der Meldung später, bleibt die Fälligkeit der Aufgabe unverändert.
 - **Status:** bestätigt
-- **Offene Frage:** Welche Fristen sind für den Fachbereich verbindlich, wenn eine Meldung mit hoher Priorität entsteht?
+- **Offene Frage:** Sind 2 bzw. 14 Tage verbindliche Fristen des Fachbereichs?
 
 ---
 
 ## REGEL-09
 
-- **Regel:** Jede Statusänderung einer Meldung wird mit dem früheren Status, dem neuen Status, dem Bearbeiter und einem Hinweis dokumentiert.
+- **Regel:** Jeder Statuswechsel einer Meldung wird mit altem und neuem Status, Zeitpunkt, Bearbeiter und Kommentar in der Statushistorie festgehalten.
 - **Bereich:** Meldungen/Aufgaben
 - **Fundstellen:**
-  - `src/Controller/IssueController.php::status()` – speichert bei jeder Änderung einen Statuswechsel
-  - `src/Entity/IssueStatusChange.php` – modelliert die Historie des Zustandswechsels
-  - `src/Service/IssueService.php::createIssue()` – legt beim Anlegen ebenfalls einen Statuswechsel an
-- **Gegenbeobachtung:** Die Historisierung ist wichtig, aber die genaue Regel für die Freigabe von Kommentaren ist noch offen.
-- **Status:** bestätigt
-- **Offene Frage:** Muss ein Kommentar bei jeder Statusänderung zwingend erforderlich sein oder nur optional?
+  - `src/Controller/IssueController.php::status()` – schreibt bei jedem manuellen Wechsel einen Eintrag
+  - `src/Service/IssueService.php::createIssue()` – schreibt den ersten Eintrag beim Erfassen
+  - `src/Entity/IssueStatusChange.php` – Eintrag der Statushistorie
+- **Gegenbeobachtung:** Drei Wege ändern den Status **ohne** Eintrag in der Statushistorie:
+  - `src/Service/IssueService.php::closeIssue()` (Schließen)
+  - `src/Service/IssueService.php::createTaskFromIssue()` (in Bearbeitung durch neue Aufgabe)
+  - `src/Controller/IssueController.php::bulk()` (Sammeländerung)
+- **Status:** widersprüchlich
+- **Offene Frage:** Muss bei jedem Statuswechsel ein Kommentar angegeben werden? (Im Altsystem ist er optional.)
 
 ---
 
 ## REGEL-10
 
-- **Regel:** Eine Meldung erhält eine eindeutige laufende Nummer, die bei der Erfassung automatisch vergeben wird.
+- **Regel:** Jede Meldung erhält beim Erfassen eine eindeutige, fortlaufende Meldungsnummer.
 - **Bereich:** Meldungen/Aufgaben
 - **Fundstellen:**
-  - `src/Service/IssueService.php::createIssue()` – setzt die Nummer vor dem Speichern
-  - `src/Repository/IssueRepository.php::nextNumber()` – erzeugt die nächste Nummer
-- **Gegenbeobachtung:** Die Nummerierung ist vorhanden, aber das Format ist nur in diesem System festgelegt und nicht fachlich abgestimmt.
+  - `src/Service/IssueService.php::createIssue()` – setzt die Nummer
+  - `src/Repository/IssueRepository.php::nextNumber()` – Nummer = `ME-` + (2000 + Anzahl Meldungen + 1)
+  - `src/Entity/Issue.php::issueNumber` – eindeutig
+- **Gegenbeobachtung:** Die Nummer wird aus der Anzahl der Meldungen berechnet; werden zwei Meldungen gleichzeitig erfasst, erhalten beide dieselbe Nummer und die zweite scheitert an der Eindeutigkeit. Aufgaben (`TaskRepository::nextNumber()`, `AU-`) werden genauso nummeriert.
 - **Status:** bestätigt
-- **Offene Frage:** Ist die laufende Nummer eine interne Verwaltungsnummer oder eine nach außen sichtbare Kundennummer?
+- **Offene Frage:** Ist die Meldungsnummer nach außen sichtbar (z. B. auf der Mitteilung an den Mieter)?
 
 ---
 
 ## REGEL-11
 
-- **Regel:** Eine Meldung kann nur dann eine Aufgabe erhalten, wenn ein aussagekräftiger Titel für die Aufgabe angegeben ist.
+- **Regel:** Jede Aufgabe braucht einen Titel.
 - **Bereich:** Meldungen/Aufgaben
 - **Fundstellen:**
-  - `src/Controller/IssueController.php::addTask()` – prüft, ob der Titel leer ist
-  - `src/Service/IssueService.php::createTaskFromIssue()` – erzeugt die Aufgabe nur mit gültigen Angaben
-- **Gegenbeobachtung:** Die fachliche Regel ist klar definiert, aber in der Praxis könnte ein kurzer Standardtext sinnvoll sein.
+  - `src/Controller/IssueController.php::addTask()` – lehnt einen leeren Titel ab
+  - `src/Entity/Task.php::title` – Pflichtfeld im Formular »Neue Aufgabe«
+- **Gegenbeobachtung:** keine
 - **Status:** bestätigt
-- **Offene Frage:** Muss der Titel für alle Aufgaben immer manuell eingegeben werden oder gibt es Standardtitel nach Kategorie?
+- **Offene Frage:** Soll es Standardtitel je Kategorie der Meldung geben?
 
 ---
 
 ## REGEL-12
 
-- **Regel:** Eine Einheit darf zu einem bestimmten Zeitraum nur ein aktives Mietverhältnis besitzen.
+- **Regel:** Die Laufzeiten der Mietverhältnisse einer Mieteinheit dürfen sich nicht überschneiden.
 - **Bereich:** Vermietung
 - **Fundstellen:**
-  - `src/Service/TenancyService.php::createTenancy()` – prüft vorhandene aktive Mietverhältnisse
-  - `src/Repository/TenancyRepository.php::findActiveForUnit()` – liefert aktive Verträge für dieselbe Einheit
-  - `src/Entity/Tenancy.php::unit` – verbindet das Mietverhältnis mit genau einer Einheit
-- **Gegenbeobachtung:** Die fachliche Prüfung existiert, aber die Regel ist nicht als eigenständiger fachlicher Sachverhalt im Konzeptmodell sichtbar.
-- **Status:** bestätigt
-- **Offene Frage:** Was gilt fachlich bei Mehrfachvermietung aus einem Übergangsfall oder bei einer vorübergehenden Freistellung?
+  - `src/Service/TenancyService.php::createTenancy()` – lehnt überschneidende Laufzeiten ab
+  - `src/Repository/TenancyRepository.php::findOverlapping()` – sucht Mietverhältnisse derselben Mieteinheit mit überschneidender Laufzeit
+- **Gegenbeobachtung:**
+  - `findOverlapping()` ignoriert Entwürfe: Für eine Mieteinheit können mehrere Entwürfe mit gleicher Laufzeit angelegt werden.
+  - `TenancyService::activate()` prüft die Überschneidung nicht erneut; zwei überlappende Entwürfe lassen sich nacheinander aktivieren.
+  - Unterschied zu REGEL-01: REGEL-01 betrifft den Einheitenstatus bei der Anlage, REGEL-12 die zeitliche Überschneidung.
+- **Status:** widersprüchlich
+- **Offene Frage:** Darf es für eine Mieteinheit mehrere Entwürfe gleichzeitig geben (z. B. für mehrere Interessenten)?
 
 ---
 
 ## REGEL-13
 
-- **Regel:** Ein Mietverhältnis hat einen gültigen Zeitrahmen: der Beginn muss vor dem Ende liegen, wenn ein Ende festgelegt ist.
+- **Regel:** Das Ende eines Mietverhältnisses liegt nicht vor seinem Beginn; ohne Ende ist es unbefristet.
 - **Bereich:** Vermietung
 - **Fundstellen:**
-  - `src/Service/TenancyService.php::createTenancy()` – prüft überlappende Zeiträume und das Verhältnis von Beginn und Ende
-  - `src/Entity/Tenancy.php::startDate` – Vertragsbeginn
-  - `src/Entity/Tenancy.php::endDate` – Vertragsende
-- **Gegenbeobachtung:** Die fachliche Regel ist vorhanden, aber die zeitlichen Zustandsgrenzen sind nicht als eigenes Konzept im Modell abgebildet.
-- **Status:** bestätigt
-- **Offene Frage:** Gilt ein Ende ohne festen Termin als offen oder als unbegrenzter Vertrag?
+  - `src/Service/TenancyService.php::createTenancy()` – lehnt ein Ende vor dem Beginn ab
+  - `templates/tenancy/show.html.twig` – zeigt ohne Ende »unbefristet«
+- **Gegenbeobachtung:** Bei Kündigung (`TenancyController::terminate()`) und Aufhebung (`TenancyService::terminateImmediately()`) wird das Ende ohne Prüfung gesetzt; ein Stichtag vor dem Beginn wird angenommen.
+- **Status:** widersprüchlich
+- **Offene Frage:** Darf ein Mietverhältnis vor seinem Beginn aufgehoben werden, und welches Ende gilt dann?
 
 ---
 
 ## REGEL-14
 
-- **Regel:** Ein aktives Mietverhältnis muss mindestens einen Mieter umfassen, und der letzte Mieter kann nicht ohne Weiteres entfernt werden.
+- **Regel:** Ein Mietverhältnis kann nur mit mindestens einem Mieter aktiviert werden, und einem laufenden Mietverhältnis darf der letzte Mieter nicht entfernt werden.
 - **Bereich:** Vermietung
 - **Fundstellen:**
-  - `src/Entity/Tenancy.php::tenants` – Sammlung der Mietparteien
-  - `src/Service/TenancyService.php::activate()` – prüft, ob mindestens ein Mieter vorhanden ist
-  - `src/Service/TenancyService.php::removeTenant()` – verhindert das Entfernen des letzten Mieters eines aktiven Vertrags
-- **Gegenbeobachtung:** Die fachliche Beziehung zwischen Mietverhältnis und Mietpartei ist erkennbar, aber die Rolle des Mieters ist nicht separat als eigener fachlicher Begriff modelliert.
-- **Status:** bestätigt
-- **Offene Frage:** Ist ein Mietverhältnis immer nur an natürliche Personen gebunden oder auch an juristische Personen?
+  - `src/Service/TenancyService.php::activate()` – verlangt mindestens einen Mieter
+  - `src/Service/TenancyService.php::removeTenant()` – verhindert das Entfernen des letzten Mieters bei aktivem Mietverhältnis
+- **Gegenbeobachtung:** `removeTenant()` prüft nur den Zustand »aktiv«; bei einem gekündigten Mietverhältnis kann der letzte Mieter entfernt werden.
+- **Status:** widersprüchlich
+- **Offene Frage:** Kann ein Mieter auch eine Firma sein? Darf bei einem gekündigten Mietverhältnis der letzte Mieter entfernt werden?
 
 ---
 
 ## REGEL-15
 
-- **Regel:** Ein Mietverhältnis dokumentiert die Kündigung separat vom Status und setzt die Einheit entsprechend auf den passenden Zustand bei der Rückgabe.
+- **Regel:** Ob ein Mietverhältnis gekündigt ist, ergibt sich aus seinem Zustand und dem Kündigungsdatum.
 - **Bereich:** Vermietung
 - **Fundstellen:**
-  - `src/Entity/Tenancy.php::noticeGiven` – zusätzliche fachliche Kennzeichnung der Kündigung
-  - `src/Entity/Tenancy.php::noticeDate` – Datum der Kündigung
-  - `src/Service/TenancyService.php::terminateImmediately()` – setzt den Status und den Einheitstatus
-  - `src/Service/TenancyService.php::recordHandover()` – bei Rückgabe wird die Einheit frei oder in Renovierung gesetzt
-- **Gegenbeobachtung:** Der fachliche Begriff „Kündigung“ ist im Modell doppelt vorhanden: einmal als Status, einmal als eigenes Kennzeichen.
+  - `src/Entity/Tenancy.php::status` – Zustand `NOTICE_GIVEN` (gekündigt)
+  - `src/Entity/Tenancy.php::noticeDate` – Kündigungsdatum
+  - `src/Entity/Tenancy.php::noticeGiven` – zusätzliches Kennzeichen (Ticket #213)
+- **Gegenbeobachtung:**
+  - Die Kündigung ist doppelt abgelegt: als Zustand und als Kennzeichen `noticeGiven`.
+  - Die ordentliche Kündigung (`TenancyController::terminate()`) setzt das Kennzeichen **nicht**; nur die Aufhebung (`TenancyService::terminateImmediately()`) setzt es.
+  - `templates/tenancy/show.html.twig` blendet »Kündigung erfassen« nur aus, wenn das Kennzeichen gesetzt ist; der Controller selbst prüft nur den Zustand.
 - **Status:** widersprüchlich
-- **Offene Frage:** Ist die Kündigung ein eigener fachlicher Zustand oder nur ein Zusatzmerkmal zum bestehenden Vertragstatus?
+- **Entscheidung:** Das Kennzeichen wird nicht ins Modell übernommen; maßgeblich sind Zustand und Kündigungsdatum (siehe Logbuch).
+- **Offene Frage:** Wofür wurde das Kennzeichen mit Ticket #213 eingeführt?
 
 ---
 
 ## REGEL-16
 
-- **Regel:** Die wirtschaftlichen Inhalte eines Mietverhältnisses werden im Vertrag festgehalten und bleiben für die Laufzeit des Vertrages verbindlich.
+- **Regel:** Kaltmiete, Nebenkostenvorauszahlung und Kaution werden beim Anlegen des Mietverhältnisses festgelegt; fehlen sie, gelten Angebotsmiete und Vorauszahlung der Mieteinheit und eine Kaution von drei Kaltmieten.
 - **Bereich:** Vermietung
 - **Fundstellen:**
-  - `src/Entity/Tenancy.php::coldRent` – Kaltmiete laut Vertrag
-  - `src/Entity/Tenancy.php::serviceChargeAdvance` – Vorauszahlung für Betriebskosten
-  - `src/Entity/Tenancy.php::deposit` – Kaution
-  - `src/Service/TenancyService.php::createTenancy()` – übernimmt Werte aus der Einheit, falls nicht separat angegeben
-- **Gegenbeobachtung:** Die Mietwerte sind an der Einheit als Standardwerte hinterlegt, aber im Vertrag werden sie separat fixiert.
+  - `src/Service/TenancyService.php::createTenancy()` – übernimmt fehlende Werte aus der Mieteinheit, Kaution = 3 × Kaltmiete
+  - `src/Controller/TenancyController.php::new()` – füllt das Formular mit den Werten der Mieteinheit vor
+  - `src/Entity/Tenancy.php::coldRent`, `serviceChargeAdvance`, `deposit`
+- **Gegenbeobachtung:** keine; es gibt keine Route, mit der die Konditionen eines Mietverhältnisses später geändert werden, und eine Änderung der Angebotsmiete wirkt nicht auf bestehende Mietverhältnisse.
 - **Status:** bestätigt
-- **Offene Frage:** Darf die Miete oder die Nebenkostenvorauszahlung im Laufe des Vertrags geändert werden oder bleibt sie für die gesamte Vertragslaufzeit unverändert?
+- **Offene Frage:** Wie werden Mieterhöhungen oder angepasste Vorauszahlungen abgebildet?
 
 ---
 
 ## REGEL-17
 
-- **Regel:** Einzug und Auszug werden als Übergabeereignisse dokumentiert und sind Teil des Lebenszyklus eines Mietverhältnisses.
+- **Regel:** Zu jedem Mietverhältnis werden Einzug und Auszug als Übergabe mit Datum, Zählerständen, Schlüsselanzahl und Mängeln protokolliert.
 - **Bereich:** Vermietung
 - **Fundstellen:**
-  - `src/Entity/Tenancy.php::handovers` – Sammlung der Übergaben
-  - `src/Service/TenancyService.php::recordHandover()` – dokumentiert Einzug bzw. Auszug
-  - `src/Service/TenancyService.php::activate()` – erzeugt bei Aktivierung die Übergabe zum Einzug
-- **Gegenbeobachtung:** Die Übergabe ist fachlich wichtig, aber der Begriff ist im fachlichen Modell noch nicht als eigener Vorgang mit eigener Bedeutung ausformuliert.
+  - `src/Service/TenancyService.php::recordHandover()` – speichert die Übergabe
+  - `src/Service/TenancyService.php::activate()` – plant den Termin für den Einzug
+  - `src/Controller/TenancyController.php::terminate()`, `src/Service/TenancyService.php::terminateImmediately()` – planen den Termin für den Auszug
+- **Gegenbeobachtung:** Die Art der Übergabe ist im Formular frei wählbar; mehrere Einzüge oder Auszüge zu einem Mietverhältnis sind möglich.
 - **Status:** bestätigt
-- **Offene Frage:** Welche Übergabeschritte müssen fachlich zwingend dokumentiert werden – nur Einzug und Auszug oder auch Zwischenzustände?
+- **Offene Frage:** Darf es je Mietverhältnis mehr als einen Einzug bzw. Auszug geben?
 
 ---
 
 ## REGEL-18
 
-- **Regel:** Ein Mietverhältnis hat eine eindeutige Vertragsnummer, die den Vertrag fachlich identifiziert.
+- **Regel:** Jedes Mietverhältnis hat eine eindeutige Vertragsnummer, die beim Anlegen vergeben wird.
 - **Bereich:** Vermietung
 - **Fundstellen:**
-  - `src/Entity/Tenancy.php::contractNumber` – fachlich eindeutige Vertragsnummer
-  - `src/Repository/TenancyRepository.php::nextContractNumber()` – erzeugt die nächste laufende Nummer
-- **Gegenbeobachtung:** Die Nummer ist fachlich sinnvoll, aber sie ist technisch in der Datenbank als eindeutiger String abgebildet und nicht als eigenes fachliches Dokumentmodell ausformuliert.
+  - `src/Entity/Tenancy.php::contractNumber` – eindeutig
+  - `src/Repository/TenancyRepository.php::nextContractNumber()` – Nummer = `MV-` + (1000 + Anzahl Mietverhältnisse + 1)
+- **Gegenbeobachtung:** Wie bei REGEL-10 aus der Anzahl berechnet; gleichzeitiges Anlegen erzeugt doppelte Nummern.
 - **Status:** bestätigt
-- **Offene Frage:** Ist die Vertragsnummer nur intern verwaltbar oder muss sie für den Mieter sichtbar sein?
+- **Offene Frage:** Ist die Vertragsnummer für Mieter sichtbar?
+
+---
+
+## REGEL-19
+
+- **Regel:** Ein aktives Mietverhältnis kann gekündigt werden; es endet drei Monate nach dem Kündigungsdatum, und die Rückgabe wird für diesen Tag geplant.
+- **Bereich:** Vermietung
+- **Fundstellen:**
+  - `src/Controller/TenancyController.php::terminate()` – nur bei aktivem Mietverhältnis; Ende = Kündigungsdatum + 3 Monate; Mietverhältnis und Mieteinheit werden »gekündigt«
+  - `src/Service/AppointmentService.php::createHandover()` – Termin für den Auszug am Ende
+- **Gegenbeobachtung:**
+  - Die Frist steht fest im Controller, nicht in einem Service; sie ist für alle Mietverhältnisse gleich.
+  - Ein Kündigungsdatum in der Zukunft oder weit in der Vergangenheit wird nicht geprüft.
+- **Status:** zu klären
+- **Offene Frage:** Gilt die Frist von drei Monaten für Kündigungen durch Mieter und durch Vermieter gleichermaßen? Gilt sie auch für Gewerbeeinheiten?
+
+---
+
+## REGEL-20
+
+- **Regel:** Nur die Administration darf ein aktives oder gekündigtes Mietverhältnis fristlos aufheben.
+- **Bereich:** Vermietung
+- **Fundstellen:**
+  - `templates/tenancy/show.html.twig` – Button »Aufhebung / fristlos« nur bei aktivem oder gekündigtem Mietverhältnis und nur für `ROLE_ADMIN`
+  - `src/Service/TenancyService.php::terminateImmediately()` – Mietverhältnis »aufgehoben«, Ende = Stichtag, Mieteinheit »gekündigt«, Termin für den Auszug
+- **Gegenbeobachtung:** `src/Controller/TenancyController.php::terminateImmediately()` und der Service prüfen weder Rolle noch Zustand; `config/packages/security.yaml` erlaubt die Route jedem angemeldeten Benutzer. Damit lassen sich auch Entwürfe und beendete Mietverhältnisse aufheben.
+- **Status:** widersprüchlich
+- **Offene Frage:** Wer darf aufheben? Ist eine Aufhebung eines Entwurfs fachlich ein »Verwerfen«?
+
+---
+
+## REGEL-21
+
+- **Regel:** Mit dem Auszug endet das Mietverhältnis; die Mieteinheit wird wieder frei oder, wenn Mängel festgestellt wurden, in Renovierung gesetzt.
+- **Bereich:** Vermietung
+- **Fundstellen:**
+  - `src/Service/TenancyService.php::recordHandover()` – bei Auszug Mietverhältnis »beendet«, Ende = Auszugsdatum (falls leer), Mieteinheit »frei« oder »Renovierung«
+  - `src/Controller/TenancyController.php::handover()` – schlägt bei gekündigtem oder aufgehobenem Mietverhältnis »Auszug« vor
+- **Gegenbeobachtung:** Der Zustand des Mietverhältnisses wird nicht geprüft; ein Auszug beendet auch ein aktives (nicht gekündigtes) Mietverhältnis und über einen direkten Aufruf sogar einen Entwurf.
+- **Status:** widersprüchlich
+- **Offene Frage:** Ist ein Auszug ohne vorherige Kündigung oder Aufhebung zulässig (z. B. bei befristeten Mietverhältnissen)?
+
+---
+
+## REGEL-22
+
+- **Regel:** Eine erledigte Aufgabe darf nur mit Begründung wiedereröffnet werden; die Begründung wird mit Datum in den Notizen festgehalten.
+- **Bereich:** Meldungen/Aufgaben
+- **Fundstellen:**
+  - `src/Controller/TaskController.php::reopen()` – verlangt bei erledigter Aufgabe eine Begründung, setzt »offen« und ergänzt die Notizen
+  - `templates/task/edit.html.twig` – Button »Wieder eröffnen« nur bei nicht offener Aufgabe
+- **Gegenbeobachtung:**
+  - Eine abgebrochene Aufgabe kann ohne Begründung wiedereröffnet werden.
+  - Über das Statusfeld in `src/Form/TaskType.php` kann jede Aufgabe ohne Begründung in jeden Status gesetzt werden.
+  - `TaskController::done()` setzt »erledigt« ohne jede Prüfung, auch für abgebrochene Aufgaben.
+- **Status:** widersprüchlich
+- **Offene Frage:** Welche Statuswechsel einer Aufgabe sind fachlich erlaubt?
+
+---
+
+## REGEL-23
+
+- **Regel:** Eine Aufgabe für einen Dienstleister braucht einen Ansprechpartner; ist ein Dienstleister eingetragen, gilt die Aufgabe als zugewiesen.
+- **Bereich:** Meldungen/Aufgaben
+- **Fundstellen:**
+  - `src/Service/TaskService.php::save()` – übernimmt den Ansprechpartner des Dienstleisters, lehnt ohne Ansprechpartner ab, setzt »offen« auf »zugewiesen«
+  - `src/Service/IssueService.php::createTaskFromIssue()` – setzt bei vorgeschlagenem Dienstleister »zugewiesen«
+- **Gegenbeobachtung:** `createTaskFromIssue()` prüft den Ansprechpartner nicht; hat der Dienstleister keinen, entsteht eine zugewiesene Aufgabe ohne Ansprechpartner.
+- **Status:** widersprüchlich
+- **Offene Frage:** Ist der Ansprechpartner Pflicht, oder genügt der Dienstleister?
+
+---
+
+## REGEL-24
+
+- **Regel:** Aufgaben dürfen nur aktiven Dienstleistern zugeordnet werden; aus einer Meldung wird ein Dienstleister mit passendem Gewerk vorgeschlagen.
+- **Bereich:** Meldungen/Aufgaben
+- **Fundstellen:**
+  - `src/Form/TaskType.php` – Auswahl nur aus aktiven Dienstleistern (`ServiceProviderRepository::createActiveQueryBuilder()`)
+  - `src/Service/IssueService.php::createTaskFromIssue()` – Vorschlag nach Kategorie der Meldung (Heizung, Sanitär, Elektro, Aufzug)
+- **Gegenbeobachtung:** Der Vorschlag in `createTaskFromIssue()` sucht nur nach dem Gewerk und berücksichtigt den Status nicht; ein inaktiver Dienstleister kann vorgeschlagen werden. Bei mehreren passenden wird der erste genommen.
+- **Status:** widersprüchlich
+- **Offene Frage:** Nach welchen Kriterien soll unter mehreren passenden Dienstleistern ausgewählt werden?
+
+---
+
+## REGEL-25
+
+- **Regel:** Nach einer Zusage wird der Mietinteressent als Mieter übernommen; ist die gewünschte Mieteinheit frei, wird sie für ihn reserviert.
+- **Bereich:** Vermietung
+- **Fundstellen:**
+  - `src/Service/RentalService.php::acceptProspect()` – legt den Mieter an, Interessentenstatus »Zusage«, reserviert nur eine freie Mieteinheit
+  - `templates/letting/prospects.html.twig` – Button »Zusage« nur bei Status neu, Besichtigung geplant oder Bewerbung eingegangen
+  - `src/Controller/LettingController.php::accept()` – leitet zur Anlage des Mietverhältnisses weiter
+- **Gegenbeobachtung:**
+  - Der Service prüft den Interessentenstatus nicht; eine zweite Zusage legt den Mieter ein zweites Mal an.
+  - Der Name wird am letzten Leerzeichen in Vor- und Nachname getrennt; bei einem einzigen Wort ist der Vorname »-«.
+  - Die Reservierung hat kein Ablaufdatum und wird nicht aufgehoben, wenn kein Mietverhältnis folgt.
+- **Status:** widersprüchlich
+- **Offene Frage:** Wie lange gilt eine Reservierung, und wer hebt sie wieder auf?
+
+---
+
+## REGEL-26
+
+- **Regel:** Jede Liegenschaft gehört genau einem Eigentümer.
+- **Bereich:** Bestand
+- **Fundstellen:**
+  - `src/Entity/Property.php::owner` – Pflichtverweis auf einen Eigentümer
+  - `src/Form/PropertyType.php` – Auswahl des Eigentümers
+- **Gegenbeobachtung:**
+  - Auch inaktive Eigentümer sind auswählbar; der Eigentümerstatus wird nirgends ausgewertet.
+  - Ein Eigentümerwechsel ist durch Bearbeiten jederzeit möglich, ohne Stichtag; nur Buchungen merken sich den Eigentümer zum Buchungszeitpunkt (`src/Controller/AccountingController.php::newBooking()`).
+- **Status:** widersprüchlich
+- **Offene Frage:** Kann eine Liegenschaft mehreren Eigentümern gehören (Eigentümergemeinschaft)? Wie wird ein Eigentümerwechsel zu einem Stichtag abgebildet?
+
+---
+
+## REGEL-27
+
+- **Regel:** Liegenschaften, Gebäude und Eigentümer erhalten beim Anlegen eine Nummer: Objektnummer `OB-0xxx`, Gebäudenummer aus Objektnummer und laufender Gebäudezahl (`OB-0xxx-G1`), Eigentümernummer `EI-xxxx`.
+- **Bereich:** Bestand
+- **Fundstellen:**
+  - `src/Service/PropertyService.php::nextPropertyNumber()` – Objektnummer = Anzahl Liegenschaften + 101
+  - `src/Controller/PropertyController.php::newBuilding()` – Gebäudenummer
+  - `src/Controller/OwnerController.php::new()` – Eigentümernummer = Anzahl Eigentümer + 1
+  - `src/Entity/Property.php::propertyNumber`, `src/Entity/Owner.php::ownerNumber` – eindeutig
+- **Gegenbeobachtung:**
+  - Die Nummern sind nur Vorschläge und im Formular änderbar; eine geänderte Nummer kann mit einem späteren Vorschlag kollidieren.
+  - Die Gebäudenummer ist nicht eindeutig.
+- **Status:** widersprüchlich
+- **Offene Frage:** Sind die Nummern frei vergebbar oder fest vom System vergeben?
+
+---
+
+## REGEL-28
+
+- **Regel:** Ein Gebäude gehört zu genau einer Liegenschaft und übernimmt beim Anlegen deren Anschrift; eine Mieteinheit gehört zu genau einem Gebäude.
+- **Bereich:** Bestand
+- **Fundstellen:**
+  - `src/Entity/Building.php::property`, `src/Entity/RentalUnit.php::building` – Pflichtverweise
+  - `src/Controller/PropertyController.php::newBuilding()` – übernimmt Straße und Hausnummer der Liegenschaft
+  - `src/Controller/RentalUnitController.php::new()` – Mieteinheit wird für ein Gebäude angelegt
+- **Gegenbeobachtung:**
+  - Die Einheitsnummer ist weder je Gebäude noch insgesamt eindeutig.
+  - Über `src/Form/RentalUnitType.php` kann eine Mieteinheit einem anderen Gebäude, auch einer anderen Liegenschaft, zugeordnet werden – auch während sie vermietet ist.
+- **Status:** widersprüchlich
+- **Offene Frage:** Woran wird eine Mieteinheit fachlich eindeutig erkannt? Darf sie das Gebäude wechseln?
+
+---
+
+## REGEL-29
+
+- **Regel:** Der Einheitenstatus einer Mieteinheit folgt aus der Vermietung: reserviert bei Entwurf oder Zusage, vermietet bei aktivem, gekündigt bei gekündigtem oder aufgehobenem Mietverhältnis, frei oder Renovierung nach dem Auszug.
+- **Bereich:** Bestand
+- **Fundstellen:**
+  - `src/Service/TenancyService.php::createTenancy()`, `activate()`, `terminateImmediately()`, `recordHandover()`
+  - `src/Controller/TenancyController.php::terminate()`
+  - `src/Service/RentalService.php::acceptProspect()`
+- **Gegenbeobachtung:**
+  - In `src/Form/RentalUnitType.php` ist der Einheitenstatus frei wählbar; eine vermietete Mieteinheit kann ohne Mietverhältnis auf »frei« gesetzt werden und umgekehrt.
+  - »Renovierung → frei« und »gesperrt« sind nur über dieses Formular erreichbar.
+- **Status:** widersprüchlich
+- **Offene Frage:** Welche Einheitenstatus darf der Verwalter direkt setzen (z. B. nur »gesperrt« und »Renovierung beendet«)?
+
+---
+
+## REGEL-30
+
+- **Regel:** Ein Mieter hat einen Vor- und einen Nachnamen.
+- **Bereich:** Bestand
+- **Fundstellen:**
+  - `src/Entity/Tenant.php::firstName`, `lastName` – Pflichtfelder
+  - `src/Form/TenantType.php` – Erfassung
+- **Gegenbeobachtung:** `src/Service/RentalService.php::acceptProspect()` setzt bei einem einteiligen Namen den Vornamen »-«; der Mietinteressent hat nur ein Namensfeld.
+- **Status:** widersprüchlich
+- **Offene Frage:** Wie werden Firmen als Mieter erfasst (siehe REGEL-14)?

@@ -43,12 +43,12 @@ Jeder der 29 Anwendungsfälle ist genau einem Kontext zugeordnet:
 
 | Kontext | Zugeordnete Anwendungsfälle |
 |---|---|
-| **Vermietung** | AF-01 Mietinteressent erfassen; AF-02 Besichtigung terminieren; AF-03 Zusage erteilen und reservieren; AF-04 Mietvertragsentwurf anlegen; AF-05 Vertragsparteien verwalten; AF-06 Mietverhältnis aktivieren; AF-07 Mietverhältnis kündigen; AF-08 Mietverhältnis fristlos aufheben; AF-09 Wohnungsübergabe protokollieren |
-| **Bestand** | AF-10 Liegenschaft anlegen und pflegen; AF-11 Gebäude strukturieren; AF-12 Mieteinheit anlegen und pflegen; AF-13 Eigentümer verwalten; AF-14 Mieterstammdaten pflegen; AF-15 Dienstleister pflegen |
-| **Meldungen und Aufgaben** | AF-16 Schadensmeldung erfassen; AF-17 Meldungsstatus fortschreiben; AF-18 Handwerkeraufgabe beauftragen; AF-19 Meldung schließen; AF-20 Mietermitteilung drucken; AF-21 Aufgabe planen und steuern; AF-22 Aufgabe abschließen; AF-23 Aufgabe wiedereröffnen |
-| **Termine** | AF-24 Vor-Ort-Termin vereinbaren |
+| **Vermietung** | AF-01 Mietinteressent erfassen; AF-02 Besichtigung planen; AF-03 Zusage erteilen; AF-04 Mietverhältnis als Entwurf anlegen; AF-05 Mieter eines Mietverhältnisses ändern; AF-06 Mietverhältnis aktivieren; AF-07 Mietverhältnis kündigen; AF-08 Mietverhältnis fristlos aufheben; AF-09 Übergabe protokollieren |
+| **Bestand** | AF-10 Liegenschaft anlegen und pflegen; AF-11 Gebäude anlegen und pflegen; AF-12 Mieteinheit anlegen und pflegen; AF-13 Eigentümer pflegen; AF-14 Mieter pflegen; AF-15 Dienstleister pflegen |
+| **Meldungen und Aufgaben** | AF-16 Meldung erfassen; AF-17 Meldungsstatus ändern; AF-18 Aufgabe zu einer Meldung anlegen; AF-19 Meldung schließen; AF-20 Mitteilung an Mieter drucken; AF-21 Aufgabe anlegen und pflegen; AF-22 Aufgabe erledigen; AF-23 Aufgabe wiedereröffnen |
+| **Termine** | AF-24 Termin planen |
 | **Abrechnung** | AF-25 Monatliche Sollstellungen erzeugen; AF-26 Mietzahlung verbuchen; AF-27 Liegenschaftsbuchung erfassen; AF-28 Eigentümerabrechnung erstellen |
-| **Berichte** | AF-29 Leerstand überwachen |
+| **Berichte** | AF-29 Leerstand auswerten |
 
 ## Kontextgrenzen und Bedeutungsunterschiede
 

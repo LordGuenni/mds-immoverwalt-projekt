@@ -1,14 +1,22 @@
 # Anwendungsfälle Altsystem (ImmoVerwalt)
 
-Dieses Dokument enthält die fachlichen Anwendungsfälle (Use Cases) des Altsystems ImmoVerwalt, abgeleitet aus:
-1. **Bestandsaufnahme:** [`model/bestand.md`](file:///home/florian/Developement/mds-immoverwalt-projekt/model/bestand.md) (Routen, Controller und Doctrine-Entitäten)
+Dieses Dokument enthält die fachlichen Anwendungsfälle des Altsystems ImmoVerwalt, abgeleitet aus:
+1. **Bestandsaufnahme:** [`bestand.md`](./bestand.md) (Routen, Controller und Entitäten)
 2. **Benutzeroberfläche:** Hauptmenü, Untermenüs, Aktions-Buttons und Formulare (`templates/`)
-3. **Rollenmodell:**
-   - `verwalter` (`ROLE_PROPERTY_MANAGER`): Operative Liegenschafts-, Bestands- und Vorgangsverwaltung, Schadensmeldungen, Aufgaben, Abrechnung.
-   - `vermieter` (`ROLE_LETTING_MANAGER`): Interessentenbetreuung, Besichtigungen, Mietvertragsentwürfe und Aktivierung.
-   - `admin` (`ROLE_ADMIN`): Übergeordnete Rechte (inkl. Benutzerverwaltung, fristlose Aufhebung von Verträgen).
+3. **Rollenmodell** (`config/packages/security.yaml`, Benutzer aus `src/DataFixtures/AppFixtures.php`):
+   - `verwalter` (`ROLE_PROPERTY_MANAGER`): Bestand, Meldungen, Aufgaben, Termine, Abrechnung.
+   - `vermieter` (`ROLE_LETTING_MANAGER`): Mietinteressenten, Besichtigungen, Mietverhältnisse anlegen und aktivieren.
+   - `admin` (`ROLE_ADMIN`): erbt beide Rollen; zusätzlich Benutzerübersicht und fristlose Aufhebung.
 
-Reine technische Funktionen (Login/Logout, interne Firewall-Weiterleitungen, reine Lese-Listen ohne Fachlogik) wurden ausgeklammert oder mit den fachlichen Aktionen zusammengefasst.
+**Annahme zu den Akteuren:** Die Spalte *Akteur* ordnet jeden Anwendungsfall der Rolle zu, zu der er fachlich
+gehört (Rollenname, Menü, Beschriftung). Das Altsystem **erzwingt diese Zuordnung nicht**: Laut
+`security.yaml` darf jeder angemeldete Benutzer (`ROLE_USER`) alle Routen außer `/verwaltung` aufrufen.
+Die einzigen rollenabhängigen Stellen sind der Menüpunkt *Verwaltung*, der Button *Aufhebung / fristlos*
+(`templates/tenancy/show.html.twig`, nur Anzeige) und die internen Notizen einer Meldung, die
+`vermieter` nicht sieht (`templates/issue/_details.html.twig`). Siehe REGEL-20 und Logbuch.
+
+Reine Technik (Anmeldung, Abmeldung, Benutzerübersicht) und reine Lese-Ansichten ohne Fachlogik
+wurden weggelassen bzw. in Abschnitt 4 den Anwendungsfällen als Einstieg zugeordnet.
 
 ---
 
@@ -16,142 +24,144 @@ Reine technische Funktionen (Login/Logout, interne Firewall-Weiterleitungen, rei
 
 | Nr. | Anwendungsfall | Akteur | Ziel | Routen | Bereich |
 |---|---|---|---|---|---|
-| **AF-01** | Mietinteressent erfassen | Vermieter | Kontaktdaten und Wohnwünsche eines Interessenten aufnehmen | `prospect_new`, `prospect_edit` | Vermietung |
-| **AF-02** | Besichtigung terminieren | Vermieter | Besichtigungstermin vereinbaren und im Kalender vormerken | `viewing_new` | Vermietung |
-| **AF-03** | Zusage erteilen und reservieren | Vermieter | Interessenten akzeptieren, Mieteinheit reservieren und als Mieter anlegen | `prospect_accept` | Vermietung |
-| **AF-04** | Mietvertragsentwurf anlegen | Vermieter | Mietvertragskonditionen festlegen und Einheit reservieren | `tenancy_new`, `tenancy_show` | Vermietung |
-| **AF-05** | Vertragsparteien verwalten | Vermieter / Verwalter | Mieter zu einem Mietvertrag hinzufügen oder entfernen | `tenancy_tenant` | Vermietung |
-| **AF-06** | Mietverhältnis aktivieren | Vermieter | Unterzeichneten Vertrag wirksam setzen, Einheit vermieten, Einzug terminieren | `tenancy_activate` | Vermietung |
-| **AF-07** | Mietverhältnis kündigen | Verwaltung | Kündigung mit Frist erfassen, Übergabe planen | `tenancy_terminate` | Vermietung |
-| **AF-08** | Mietverhältnis fristlos aufheben | Admin | Vertrag außerordentlich beenden und sofortige Rückgabe veranlassen | `tenancy_terminate_immediately` | Vermietung |
-| **AF-09** | Wohnungsübergabe protokollieren | Verwalter | Einzug oder Auszug mit Zählerständen dokumentieren und Einheit freigeben/sperren | `handover_new` | Vermietung |
-| **AF-10** | Liegenschaft anlegen und pflegen | Verwalter | Liegenschaft mit Adresse, Eigentümer und Honorarsatz verwalten | `property_new`, `property_edit` | Bestand |
-| **AF-11** | Gebäude strukturieren | Verwalter | Gebäude innerhalb einer Liegenschaft erfassen oder bearbeiten | `building_new`, `building_edit` | Bestand |
-| **AF-12** | Mieteinheit anlegen und pflegen | Verwalter | Wohnung/Gewerbe mit Fläche, Zimmern und Mietansätzen einrichten | `unit_new`, `unit_edit` | Bestand |
-| **AF-13** | Eigentümer verwalten | Verwalter | Immobilieneigentümer mit Bankverbindung und Kontaktdaten hinterlegen | `owner_new`, `owner_edit` | Bestand |
-| **AF-14** | Mieterstammdaten pflegen | Verwalter | Mieterdaten und Notizen zentral erfassen und aktualisieren | `tenant_new`, `tenant_edit` | Bestand |
-| **AF-15** | Dienstleister pflegen | Verwalter | Handwerker mit Gewerk und Ansprechpartner für Aufträge registrieren | `provider_new`, `provider_edit` | Bestand |
-| **AF-16** | Schadensmeldung erfassen | Verwalter | Mangel aufnehmen, Objekt/Mieter zuordnen, Dringlichkeit prüfen | `issue_new`, `issue_edit` | Meldungen/Aufgaben |
-| **AF-17** | Meldungsstatus fortschreiben | Verwalter | Bearbeitungsstand einer Meldung mit Begründung dokumentieren | `issue_status`, `issue_bulk` | Meldungen/Aufgaben |
-| **AF-18** | Handwerkeraufgabe beauftragen | Verwalter | Reparaturaufgabe ableiten, Dienstleister zuordnen und Meldung in Arbeit setzen | `issue_add_task` | Meldungen/Aufgaben |
-| **AF-19** | Meldung schließen | Verwalter | Meldung nach vollständiger Erledigung aller Aufgaben formal beenden | `issue_close` | Meldungen/Aufgaben |
-| **AF-20** | Mietermitteilung drucken | Verwalter | Schriftliche Vorgangsbestätigung für den Mieter erzeugen | `issue_print` | Meldungen/Aufgaben |
-| **AF-21** | Aufgabe planen und steuern | Verwalter | Einzelaufgabe mit Fälligkeit, Priorität und Kosten pflegen | `task_new`, `task_edit` | Meldungen/Aufgaben |
-| **AF-22** | Aufgabe abschließen | Verwalter | Durchgeführte Instandhaltungsaufgabe als erledigt kennzeichnen | `task_done` | Meldungen/Aufgaben |
-| **AF-23** | Aufgabe wiedereröffnen | Verwalter | Erledigte Aufgabe bei Nacharbeit mit Begründung reaktivieren | `task_reopen` | Meldungen/Aufgaben |
-| **AF-24** | Vor-Ort-Termin vereinbaren | Verwalter | Kalendertermin für Besprechung, Besichtigung oder Handwerker planen | `appointment_new`, `appointment_edit` | Termine |
-| **AF-25** | Monatliche Sollstellungen erzeugen | Verwalter | Miet- und Nebenkostenforderungen aller aktiven Verträge monatlich buchen | `charge_generate` | Abrechnung |
-| **AF-26** | Mietzahlung verbuchen | Verwalter | Zahlungseingang auf Mieterkonto erfassen und Saldo ausgleichen | `account_show` | Abrechnung |
-| **AF-27** | Liegenschaftsbuchung erfassen | Verwalter | Einnahme oder Ausgabe buchen und Eigentümer zuordnen | `booking_new` | Abrechnung |
-| **AF-28** | Eigentümerabrechnung erstellen | Verwalter | Einnahmen, Ausgaben und Verwaltungshonorar für Eigentümer saldieren | `owner_statement` | Abrechnung |
-| **AF-29** | Leerstand überwachen | Verwalter | Leerstandsquote und entgangene Mieteinnahmen je Objekt analysieren | `report_vacancy` | Berichte |
+| **AF-01** | Mietinteressent erfassen | Vermieter | Kontaktdaten und gewünschte Mieteinheit eines Interessenten aufnehmen und pflegen | `prospect_new`, `prospect_edit` | Vermietung |
+| **AF-02** | Besichtigung planen | Vermieter | Besichtigungstermin mit einem Interessenten vereinbaren und im Kalender eintragen | `viewing_new` | Vermietung |
+| **AF-03** | Zusage erteilen | Vermieter | Interessenten zusagen, als Mieter übernehmen und die gewünschte Mieteinheit reservieren | `prospect_accept` | Vermietung |
+| **AF-04** | Mietverhältnis als Entwurf anlegen | Vermieter | Konditionen (Beginn, Miete, Kaution, Mieter) für eine freie oder reservierte Mieteinheit festlegen | `tenancy_new` | Vermietung |
+| **AF-05** | Mieter eines Mietverhältnisses ändern | Vermieter | Mieter zu einem Mietverhältnis hinzufügen oder daraus entfernen | `tenancy_tenant` | Vermietung |
+| **AF-06** | Mietverhältnis aktivieren | Vermieter | Unterschriebenes Mietverhältnis wirksam setzen, Mieteinheit vermieten, Einzug planen, erste Sollstellung erzeugen | `tenancy_activate` | Vermietung |
+| **AF-07** | Mietverhältnis kündigen | Verwalter | Kündigung mit Frist erfassen und die Rückgabe planen | `tenancy_terminate` | Vermietung |
+| **AF-08** | Mietverhältnis fristlos aufheben | Admin | Mietverhältnis zu einem Stichtag außerordentlich beenden und die Rückgabe planen | `tenancy_terminate_immediately` | Vermietung |
+| **AF-09** | Übergabe protokollieren | Verwalter | Einzug oder Auszug mit Zählerständen, Schlüsseln und Mängeln dokumentieren; bei Auszug Mietverhältnis beenden und Mieteinheit freigeben oder in Renovierung setzen | `handover_new` | Vermietung |
+| **AF-10** | Liegenschaft anlegen und pflegen | Verwalter | Liegenschaft mit Adresse, Eigentümer, Baujahr und Verwaltungsbeginn erfassen bzw. die Verwaltung beenden | `property_new`, `property_edit` | Bestand |
+| **AF-11** | Gebäude anlegen und pflegen | Verwalter | Gebäude innerhalb einer Liegenschaft erfassen oder bearbeiten | `building_new`, `building_edit` | Bestand |
+| **AF-12** | Mieteinheit anlegen und pflegen | Verwalter | Wohnung oder Gewerbeeinheit mit Etage, Fläche, Angebotsmiete und Status einrichten | `unit_new`, `unit_edit` | Bestand |
+| **AF-13** | Eigentümer pflegen | Verwalter | Eigentümer mit Anschrift, Ansprechpartner und Kontaktdaten hinterlegen | `owner_new`, `owner_edit` | Bestand |
+| **AF-14** | Mieter pflegen | Verwalter | Personen- und Kontaktdaten von Mietern erfassen und aktuell halten | `tenant_new`, `tenant_edit` | Bestand |
+| **AF-15** | Dienstleister pflegen | Verwalter | Dienstleister mit Gewerk und Ansprechpartner erfassen oder deaktivieren | `provider_new`, `provider_edit` | Bestand |
+| **AF-16** | Meldung erfassen | Verwalter | Mangel oder Anliegen aufnehmen, Liegenschaft/Mieteinheit/Mieter zuordnen, Dringlichkeit festlegen | `issue_new`, `issue_edit` | Meldungen/Aufgaben |
+| **AF-17** | Meldungsstatus ändern | Verwalter | Bearbeitungsstand einer oder mehrerer Meldungen fortschreiben | `issue_status`, `issue_bulk` | Meldungen/Aufgaben |
+| **AF-18** | Aufgabe zu einer Meldung anlegen | Verwalter | Aufgabe aus einer Meldung ableiten, Dienstleister nach Gewerk zuordnen, Meldung in Bearbeitung setzen | `issue_add_task` | Meldungen/Aufgaben |
+| **AF-19** | Meldung schließen | Verwalter | Meldung nach Erledigung aller Aufgaben abschließen | `issue_close` | Meldungen/Aufgaben |
+| **AF-20** | Mitteilung an Mieter drucken | Verwalter | Schriftliche Bestätigung einer Meldung für den Mieter erzeugen | `issue_print` | Meldungen/Aufgaben |
+| **AF-21** | Aufgabe anlegen und pflegen | Verwalter | Aufgabe mit Fälligkeit, Priorität, Dienstleister und Notizen planen | `task_new`, `task_edit` | Meldungen/Aufgaben |
+| **AF-22** | Aufgabe erledigen | Verwalter | Durchgeführte Aufgabe als erledigt kennzeichnen | `task_done` | Meldungen/Aufgaben |
+| **AF-23** | Aufgabe wiedereröffnen | Verwalter | Erledigte Aufgabe bei Nacharbeit mit Begründung wieder öffnen | `task_reopen` | Meldungen/Aufgaben |
+| **AF-24** | Termin planen | Verwalter | Termin (Wartung, Ablesung, Handwerker, Sonstiges) mit Bezug zu Bestand oder Vorgang planen | `appointment_new`, `appointment_edit` | Termine |
+| **AF-25** | Monatliche Sollstellungen erzeugen | Verwalter | Kaltmiete und Nebenkostenvorauszahlung aller laufenden Mietverhältnisse für einen Monat fordern | `charge_generate` | Abrechnung |
+| **AF-26** | Mietzahlung verbuchen | Verwalter | Zahlungseingang auf dem Mieterkonto erfassen und offenen Sollstellungen zuordnen | `account_show` | Abrechnung |
+| **AF-27** | Liegenschaftsbuchung erfassen | Verwalter | Einnahme oder Ausgabe einer Liegenschaft buchen und dem Eigentümer zuordnen | `booking_new` | Abrechnung |
+| **AF-28** | Eigentümerabrechnung erstellen | Verwalter | Mieteinnahmen, Ausgaben und Verwaltungshonorar einer Liegenschaft für einen Monat saldieren | `owner_statement` | Abrechnung |
+| **AF-29** | Leerstand auswerten | Verwalter | Leerstandsquote und Mietausfall je Liegenschaft ermitteln | `report_vacancy` | Berichte |
+
+Abrechnung (AF-25 bis AF-28), Termine (AF-24) und Berichte (AF-29) gehören nicht zu den Pflichtbereichen;
+sie sind der Vollständigkeit halber erfasst, werden in den folgenden Schritten aber nur bei Bedarf vertieft.
 
 ---
 
-## 2. Zuordnung zur Benutzeroberfläche (Menüs, Buttons, Formulare)
+## 2. Zuordnung zur Benutzeroberfläche
 
-| Nr. | Menüpfad | Einstiegsbutton / Oberflächenaktion | Zugehörige Rolle |
+| Nr. | Menüpfad | Einstieg in der Oberfläche | Rolle (fachlich) |
 |---|---|---|---|
-| **AF-01** | Vermietung > Interessenten | Button `+ Neuer Interessent` | `vermieter` |
-| **AF-02** | Vermietung > Interessenten / Besichtigungen | Button `Besichtigung planen` | `vermieter` |
-| **AF-03** | Vermietung > Interessenten | Button `Zusage` | `vermieter` |
-| **AF-04** | Stammdaten > Mieteinheiten > Detail | Button `Mietvertrag anlegen` (bei freien/reservierten Einheiten) | `vermieter` |
-| **AF-05** | Vermietung > Mietverhältnisse > Detail | Formular `Mieter hinzufügen` bzw. Button `Entfernen` | `vermieter`, `verwalter` |
-| **AF-06** | Vermietung > Mietverhältnisse > Detail | Button `Vertrag unterschrieben - aktivieren` | `vermieter` |
-| **AF-07** | Vermietung > Mietverhältnisse > Detail | Formular + Button `Kündigung erfassen` | `verwalter` (Verwaltung) |
-| **AF-08** | Vermietung > Mietverhältnisse > Detail | Button `Aufhebung / fristlos` (Sicherheitsabfrage, nur Admin) | `admin` |
+| **AF-01** | Vermietung > Interessenten | Button `Neu` bzw. `Bearbeiten` | `vermieter` |
+| **AF-02** | Vermietung > Interessenten / Besichtigungen | Button `Besichtigung` in der Interessentenliste bzw. `Neu` in der Besichtigungsliste | `vermieter` |
+| **AF-03** | Vermietung > Interessenten | Button `Zusage` (nur bei Status neu, Besichtigung geplant, Bewerbung eingegangen) | `vermieter` |
+| **AF-04** | Stammdaten > Mieteinheiten > Detail | Button `Mietvertrag anlegen` (nur bei freier Einheit); nach einer Zusage automatische Weiterleitung, dann auch bei reservierter Einheit | `vermieter` |
+| **AF-05** | Vermietung > Mietverhältnisse > Detail | Auswahlliste + `Mieter hinzufügen` bzw. `entfernen` | `vermieter` |
+| **AF-06** | Vermietung > Mietverhältnisse > Detail | Button `Vertrag unterschrieben - aktivieren` (nur im Entwurf) | `vermieter` |
+| **AF-07** | Vermietung > Mietverhältnisse > Detail | Datumsfeld + `Kündigung erfassen` (nur bei aktivem Mietverhältnis) | `verwalter` |
+| **AF-08** | Vermietung > Mietverhältnisse > Detail | Datumsfeld + `Aufhebung / fristlos` mit Sicherheitsabfrage (nur für Admin angezeigt) | `admin` |
 | **AF-09** | Vermietung > Mietverhältnisse > Detail | Button `Übergabe / Rückgabe` | `verwalter` |
-| **AF-10** | Stammdaten > Objekte | Button `+ Neues Objekt` bzw. `Objekt bearbeiten` | `verwalter` |
-| **AF-11** | Stammdaten > Objekte > Detail | Button `+ Neues Gebäude` bzw. `Gebäude bearbeiten` | `verwalter` |
-| **AF-12** | Stammdaten > Mieteinheiten | Button `+ Neue Einheit` bzw. `Mieteinheit bearbeiten` | `verwalter` |
-| **AF-13** | Stammdaten > Eigentümer | Button `+ Neuer Eigentümer` bzw. `Eigentümer bearbeiten` | `verwalter` |
-| **AF-14** | Stammdaten > Mieter | Button `+ Neuer Mieter` bzw. `Mieter bearbeiten` | `verwalter` |
-| **AF-15** | Stammdaten > Dienstleister | Button `+ Neuer Dienstleister` bzw. `Dienstleister bearbeiten` | `verwalter` |
-| **AF-16** | Vorgänge > Meldungen | Button `+ Neue Meldung erfassen` | `verwalter` |
-| **AF-17** | Vorgänge > Meldungen > Detail / Liste | Auswahlliste + Button `Status ändern` bzw. Sammelaktion | `verwalter` |
-| **AF-18** | Vorgänge > Meldungen > Detail | Formular + Button `Aufgabe anlegen` | `verwalter` |
-| **AF-19** | Vorgänge > Meldungen > Detail | Button `Meldung schließen` (prüft offene Aufgaben) | `verwalter` |
-| **AF-20** | Vorgänge > Meldungen > Detail | Button `Drucken` (öffnet Druckansicht) | `verwalter` |
-| **AF-21** | Vorgänge > Aufgaben | Button `+ Neue Aufgabe` bzw. `Aufgabe bearbeiten` | `verwalter` |
-| **AF-22** | Vorgänge > Aufgaben > Bearbeiten | Button `Erledigt` | `verwalter` |
-| **AF-23** | Vorgänge > Aufgaben > Bearbeiten | Formular + Button `Wiedereröffnen` (mit Begründung) | `verwalter` |
-| **AF-24** | Vorgänge > Termine | Button `+ Neuer Termin` bzw. `Termin bearbeiten` | `verwalter` |
-| **AF-25** | Abrechnung > Sollstellungen | Monatsauswahl + Button `Sollstellungen erzeugen` | `verwalter` |
-| **AF-26** | Abrechnung > Mieterkonten > Detail | Formular + Button `Zahlung erfassen` | `verwalter` |
-| **AF-27** | Abrechnung > Buchungen | Button `+ Neue Buchung` | `verwalter` |
-| **AF-28** | Abrechnung > Eigentümerabrechnung | Objektauswahl + Button `Abrechnung berechnen` | `verwalter` |
-| **AF-29** | Berichte > Leerstand | Menüpunkt `Leerstand` | `verwalter` |
+| **AF-10** | Stammdaten > Objekte | Button `Neu` bzw. `Ändern` | `verwalter` |
+| **AF-11** | Stammdaten > Objekte > Detail | Button `Gebäude hinzufügen` bzw. `Ändern` | `verwalter` |
+| **AF-12** | Stammdaten > Objekte > Detail (neu) bzw. Mieteinheiten > Detail (ändern) | Button `Einheit hinzufügen` bzw. `Ändern` | `verwalter` |
+| **AF-13** | Stammdaten > Eigentümer | Button `Neu` bzw. `Ändern` | `verwalter` |
+| **AF-14** | Stammdaten > Mieter | Button `Neu` bzw. `Ändern` | `verwalter` |
+| **AF-15** | Stammdaten > Dienstleister | Button `Neu` bzw. `Bearbeiten` | `verwalter` |
+| **AF-16** | Vorgänge > Meldungen | Button `Neue Meldung` (bzw. `Meldung erfassen` bei der Mieteinheit) bzw. `Ändern` | `verwalter` |
+| **AF-17** | Vorgänge > Meldungen > Detail / Liste | Auswahlliste + `Status ändern` bzw. Sammeländerung in der Liste (`setzen`) | `verwalter` |
+| **AF-18** | Vorgänge > Meldungen > Detail | Titelfeld + `anlegen` | `verwalter` |
+| **AF-19** | Vorgänge > Meldungen > Detail | Button `Meldung schließen` | `verwalter` |
+| **AF-20** | Vorgänge > Meldungen > Detail | Button `Mitteilung an Mieter drucken` | `verwalter` |
+| **AF-21** | Vorgänge > Aufgaben | Button `Neue Aufgabe` bzw. Aufgabennummer anklicken | `verwalter` |
+| **AF-22** | Vorgänge > Aufgaben > Aufgabe | Button `Als erledigt markieren` (nur bei offener Aufgabe) | `verwalter` |
+| **AF-23** | Vorgänge > Aufgaben > Aufgabe | Begründung + `Wieder eröffnen` (nur bei erledigter Aufgabe) | `verwalter` |
+| **AF-24** | Vorgänge > Termine | Button `Neuer Termin` bzw. `Bearbeiten` | `verwalter` |
+| **AF-25** | Abrechnung > Sollstellungen | Monatsauswahl + `Sollstellungen für <Monat> erzeugen` | `verwalter` |
+| **AF-26** | Abrechnung > Mieterkonten > Detail | Formular + `Zahlung buchen` | `verwalter` |
+| **AF-27** | Abrechnung > Buchungen | Button `Neue Buchung` | `verwalter` |
+| **AF-28** | Abrechnung > Eigentümerabrechnung | Objekt- und Monatsauswahl + `Abrechnung erstellen` | `verwalter` |
+| **AF-29** | Berichte > Leerstand | Menüpunkt `Berichte` | `verwalter` |
 
 ---
 
 ## 3. Prüffrage: Lässt sich jeder Anwendungsfall in einem Satz aus Sicht des Akteurs formulieren?
 
-**Ja.** Jeder Anwendungsfall beschreibt ein abgeschlossenes fachliches Ziel eines handelnden Akteurs:
+**Ja.**
 
-- **AF-01:** *Als Vermieter möchte ich Mietinteressenten mit Kontaktdaten und Wunschkriterien erfassen, um passende Mietangebote zu unterbreiten.*
-- **AF-02:** *Als Vermieter möchte ich Besichtigungstermine mit Interessenten vereinbaren, um Wohnungsbegehungen verbindlich zu koordinieren.*
-- **AF-03:** *Als Vermieter möchte ich einem Interessenten verbindlich zusagen, um die Mieteinheit zu reservieren und die Person als Mieter in den Vertragsprozess zu übernehmen.*
-- **AF-04:** *Als Vermieter möchte ich einen Mietvertragsentwurf mit verbindlichen Mietkonditionen erstellen, um die Verhandlungsgrundlage für den Abschluss festzuhalten.*
-- **AF-05:** *Als Vermieter oder Verwalter möchte ich Vertragsparteien bearbeiten, um Mieterwechsel im Vertrag abzubilden, ohne den letzten Mieter eines aktiven Vertrages zu löschen.*
-- **AF-06:** *Als Vermieter möchte ich den unterzeichneten Vertrag aktivieren, um die Einheit als vermietet zu buchen, die Einzugsübergabe zu planen und monatliche Sollstellungen auszulösen.*
-- **AF-07:** *Als Verwalter möchte ich die Kündigung eines Mieters mit Frist erfassen, um das Vertragsende festzulegen, die Einheit als gekündigt zu markieren und die Wohnungsrückgabe zu planen.*
-- **AF-08:** *Als Administrator möchte ich ein Mietverhältnis fristlos aufheben, um ein gestörtes Vertragsverhältnis sofort zu beenden und die Rückgabe einzuleiten.*
-- **AF-09:** *Als Verwalter möchte ich Ein- und Auszüge per Übergabeprotokoll dokumentieren, um Zählerstände und Mängel festzuhalten und die Einheit freizugeben oder in Renovierung zu setzen.*
-- **AF-10:** *Als Verwalter möchte ich Liegenschaften mit Stammdaten und Eigentümerzuordnung anlegen, um die Verwaltungsgrundlage für Gebäude und Verträge bereitzustellen.*
-- **AF-11:** *Als Verwalter möchte ich Gebäude innerhalb einer Liegenschaft strukturieren, um Mieteinheiten baulichen Objekten zuzuordnen.*
-- **AF-12:** *Als Verwalter möchte ich Mieteinheiten mit Flächen und Mietansätzen pflegen, um Vermietungs- und Abrechnungsprozesse auf korrekten Stammdaten auszuführen.*
-- **AF-13:** *Als Verwalter möchte ich Eigentümer mit Anschrift und Bankverbindung erfassen, um Abrechnungen und Honorare korrekt abrechnen zu können.*
-- **AF-14:** *Als Verwalter möchte ich Mieterstammdaten zentral pflegen, um Kontaktdaten für Vorgänge und Verträge aktuell zu halten.*
-- **AF-15:** *Als Verwalter möchte ich Handwerksbetriebe nach Gewerken verwalten, um Instandhaltungsaufträge gezielt an qualifizierte Partner zu vergeben.*
-- **AF-16:** *Als Verwalter möchte ich eingehende Schadensmeldungen erfassen, um Mängel zu dokumentieren, Einheit und Mieter zuzuordnen und eilige Fälle sofort in Prüfung zu nehmen.*
-- **AF-17:** *Als Verwalter möchte ich den Bearbeitungsstatus von Meldungen mit Kommentar fortschreiben, um den Bearbeitungsfortschritt transparent zu historisieren.*
-- **AF-18:** *Als Verwalter möchte ich Reparaturaufgaben direkt aus einer Meldung ableiten, um Handwerker anhand des Gewerks zu beauftragen und die Meldung in Bearbeitung zu setzen.*
-- **AF-19:** *Als Verwalter möchte ich eine Meldung schließen, sobald alle zugehörigen Aufgaben erledigt sind, um den Vorgang ordnungsgemäß abzuschließen.*
-- **AF-20:** *Als Verwalter möchte ich dem Mieter eine schriftliche Bestätigung der Mängelmeldung ausdrucken, um den Mieter über den Vorgangsstand zu informieren.*
-- **AF-21:** *Als Verwalter möchte ich Arbeitsaufgaben mit Frist und Kostenverfolgung steuern, um Mängel zeitnah und wirtschaftlich zu beheben.*
-- **AF-22:** *Als Verwalter möchte ich erledigte Aufgaben abschließen, um den Arbeitsfortschritt zu dokumentieren und den Weg zur Meldungsschließung freizugeben.*
-- **AF-23:** *Als Verwalter möchte ich eine erledigte Aufgabe bei Mängeln unter Angabe einer Begründung wiedereröffnen, um Nachbesserungen verbindlich einzufordern.*
-- **AF-24:** *Als Verwalter möchte ich Termine mit Objektbezug vereinbaren, um Vor-Ort-Aktivitäten termingerecht im Team zu koordinieren.*
-- **AF-25:** *Als Verwalter möchte ich monatliche Sollstellungen erzeugen, um Miet- und Nebenkostenforderungen für alle laufenden Verträge gebündelt zu buchen.*
-- **AF-26:** *Als Verwalter möchte ich eingehende Mietzahlungen verbuchen, um Mieterkonten auszugleichen und Zahlungsrückstände unmittelbar zu erkennen.*
-- **AF-27:** *Als Verwalter möchte ich Einnahmen und Ausgaben einer Liegenschaft erfassen, um Instandhaltungskosten dem Eigentümer zuzuordnen.*
-- **AF-28:** *Als Verwalter möchte ich monatliche Eigentümerabrechnungen erstellen, um Mieteinnahmen gegen Kosten und Honorar aufzurechnen und den Auszahlungsbetrag zu ermitteln.*
-- **AF-29:** *Als Verwalter möchte ich Leerstandsberichte abrufen, um Ertragsausfälle zu analysieren und Nachvermietungen anzustoßen.*
+- **AF-01:** *Als Vermieter möchte ich Mietinteressenten mit Kontaktdaten und gewünschter Mieteinheit erfassen, um sie später kontaktieren und ihnen Mieteinheiten zeigen zu können.*
+- **AF-02:** *Als Vermieter möchte ich eine Besichtigung mit einem Interessenten planen, damit der Termin verbindlich im Kalender steht.*
+- **AF-03:** *Als Vermieter möchte ich einem Interessenten zusagen, damit er als Mieter übernommen und die Mieteinheit für ihn reserviert wird.*
+- **AF-04:** *Als Vermieter möchte ich ein Mietverhältnis als Entwurf anlegen, um die Konditionen vor der Unterschrift festzuhalten.*
+- **AF-05:** *Als Vermieter möchte ich die Mieter eines Mietverhältnisses ändern, um alle Vertragsparteien richtig abzubilden.*
+- **AF-06:** *Als Vermieter möchte ich ein unterschriebenes Mietverhältnis aktivieren, damit die Mieteinheit als vermietet gilt und der Einzug geplant wird.*
+- **AF-07:** *Als Verwalter möchte ich eine Kündigung erfassen, damit das Ende des Mietverhältnisses feststeht und die Rückgabe geplant wird.*
+- **AF-08:** *Als Administrator möchte ich ein Mietverhältnis fristlos aufheben, um es zu einem Stichtag zu beenden.*
+- **AF-09:** *Als Verwalter möchte ich Einzug und Auszug protokollieren, um Zählerstände, Schlüssel und Mängel festzuhalten.*
+- **AF-10:** *Als Verwalter möchte ich Liegenschaften mit Eigentümer und Adresse pflegen, damit Gebäude, Mieteinheiten und Abrechnungen eine Grundlage haben.*
+- **AF-11:** *Als Verwalter möchte ich Gebäude einer Liegenschaft anlegen, um Mieteinheiten zuordnen zu können.*
+- **AF-12:** *Als Verwalter möchte ich Mieteinheiten mit Fläche und Angebotsmiete pflegen, damit sie vermietet werden können.*
+- **AF-13:** *Als Verwalter möchte ich Eigentümer mit Kontaktdaten pflegen, um sie erreichen und ihnen Liegenschaften zuordnen zu können.*
+- **AF-14:** *Als Verwalter möchte ich Mieterdaten pflegen, damit Kontaktdaten für Mietverhältnisse und Meldungen aktuell sind.*
+- **AF-15:** *Als Verwalter möchte ich Dienstleister nach Gewerk pflegen, um Aufgaben an passende Betriebe vergeben zu können.*
+- **AF-16:** *Als Verwalter möchte ich eine Meldung erfassen, um einen Mangel zu dokumentieren und dringende Fälle sofort prüfen zu lassen.*
+- **AF-17:** *Als Verwalter möchte ich den Status von Meldungen ändern, damit der Bearbeitungsstand nachvollziehbar ist.*
+- **AF-18:** *Als Verwalter möchte ich aus einer Meldung eine Aufgabe anlegen, damit ein passender Dienstleister den Mangel behebt.*
+- **AF-19:** *Als Verwalter möchte ich eine Meldung schließen, sobald alle Aufgaben erledigt sind.*
+- **AF-20:** *Als Verwalter möchte ich dem Mieter eine Bestätigung seiner Meldung drucken, um ihn zu informieren.*
+- **AF-21:** *Als Verwalter möchte ich Aufgaben mit Fälligkeit und Dienstleister planen, damit sie rechtzeitig erledigt werden.*
+- **AF-22:** *Als Verwalter möchte ich eine Aufgabe als erledigt kennzeichnen, damit die Meldung geschlossen werden kann.*
+- **AF-23:** *Als Verwalter möchte ich eine erledigte Aufgabe mit Begründung wiedereröffnen, um Nacharbeit einzufordern.*
+- **AF-24:** *Als Verwalter möchte ich Termine mit Bezug zu Bestand oder Vorgängen planen, um Arbeiten vor Ort zu koordinieren.*
+- **AF-25:** *Als Verwalter möchte ich die Sollstellungen eines Monats erzeugen, damit für alle laufenden Mietverhältnisse die Miete gefordert wird.*
+- **AF-26:** *Als Verwalter möchte ich Mietzahlungen verbuchen, damit der Saldo des Mieterkontos stimmt.*
+- **AF-27:** *Als Verwalter möchte ich Einnahmen und Ausgaben einer Liegenschaft buchen, damit sie in der Eigentümerabrechnung erscheinen.*
+- **AF-28:** *Als Verwalter möchte ich eine Eigentümerabrechnung erstellen, um den Auszahlungsbetrag an den Eigentümer zu ermitteln.*
+- **AF-29:** *Als Verwalter möchte ich den Leerstand je Liegenschaft auswerten, um Mietausfälle zu erkennen.*
 
 ---
 
-## 4. Ausgeklammerte Technik und reine Navigation (Lückenlose Zuordnung aller 64 Routen)
+## 4. Weggelassene Technik und reine Lese-Ansichten (lückenlose Zuordnung aller 64 Routen)
 
-Im Sinne des Leitsatzes *„Systematisch statt Herumklicken: Jede Route ist eine Aktion – 64 im Altsystem“* sind alle 64 Routen des Altsystems vollständig abgebildet:
-- **41 Aktions-Routen** lösen fachliche Zustandsänderungen, Berechnungen oder Dokumentenerzeugungen aus und bilden die **29 Anwendungsfälle (AF-01 bis AF-29)**.
-- **23 passive bzw. rein technische Routen** stellen Authentifizierung, Administration oder reine Lese-/Filtereinstiege dar und wurden wie folgt eingeordnet:
+Das Altsystem hat **64 Routen** (`bin/console debug:router`):
+- **40 Routen** lösen fachliche Änderungen, Berechnungen oder Dokumente aus und bilden die **29 Anwendungsfälle**.
+- **24 Routen** sind Technik oder reine Lese-Ansichten:
 
-| Route | Typ / Kategorie | Fachliche Begründung & Zuordnung |
+| Route | Art | Zuordnung |
 |---|---|---|
-| `app_login` | Authentifizierung | Symfony-Firewall-Anmeldung; rein technische Sicherheitsinfrastruktur. |
-| `app_logout` | Authentifizierung | Beendigung der Benutzersitzung in der Firewall. |
-| `admin_users` | Administration | Verwaltung interner Benutzerkonten durch Administratoren. |
-| `dashboard` | Informationsportal | Aggregierte Leseansicht von Beständen und Terminen ohne eigene Fachaktion. |
-| `prospect_index` | Listenansicht (Vermietung) | Übersicht der Mietinteressenten; passiver Einstieg für AF-01 bis AF-03. |
-| `viewing_index` | Listenansicht (Vermietung) | Übersicht geplanter Besichtigungen; passiver Einstieg für AF-02. |
-| `tenancy_index` | Listenansicht (Vermietung) | Übersicht aller Mietverhältnisse; passiver Einstieg für AF-04 bis AF-09. |
-| `owner_index` | Listenansicht (Stammdaten) | Liste aller Eigentümer; passiver Einstieg für AF-13. |
-| `owner_show` | Detailansicht (Stammdaten) | Reine Anzeige der Eigentümerstammdaten. |
-| `property_index` | Listenansicht (Stammdaten) | Liste der Liegenschaften; passiver Einstieg für AF-10. |
-| `property_show` | Detailansicht (Stammdaten) | Reine Anzeige von Liegenschaftsdaten und Gebäuden. |
-| `unit_index` | Listenansicht (Stammdaten) | Liste der Mieteinheiten; passiver Einstieg für AF-12. |
-| `unit_show` | Detailansicht (Stammdaten) | Reine Anzeige von Mieteinheit und aktuellem Vertrag. |
-| `tenant_index` | Listenansicht (Stammdaten) | Mieterliste mit Namenssuche; passiver Einstieg für AF-14. |
-| `tenant_show` | Detailansicht (Stammdaten) | Reine Anzeige von Mieter- und Vertragsdaten. |
-| `provider_index` | Listenansicht (Stammdaten) | Handwerkerliste; passiver Einstieg für AF-15. |
-| `issue_index` | Listenansicht (Vorgänge) | Filterbare Meldungsliste; passiver Einstieg für AF-16 bis AF-20. |
-| `issue_show` | Detailansicht (Vorgänge) | Anzeige des Meldungskontexts; Leserahmen für AF-17 bis AF-20. |
-| `task_index` | Listenansicht (Vorgänge) | Aufgabenliste nach Fälligkeit; passiver Einstieg für AF-21 bis AF-23. |
-| `appointment_index` | Listenansicht (Termine) | Kalenderliste anstehender Termine; passiver Einstieg für AF-24. |
-| `charge_index` | Listenansicht (Abrechnung) | Monatsliste der Sollstellungen; passiver Einstieg für AF-25. |
-| `account_index` | Listenansicht (Abrechnung) | Übersicht aller Mieterkonten mit Saldo; passiver Einstieg für AF-26. |
-| `booking_index` | Listenansicht (Abrechnung) | Journal der Liegenschaftsbuchungen; passiver Einstieg für AF-27. |
+| `app_login` | Technik | Anmeldung |
+| `app_logout` | Technik | Abmeldung |
+| `admin_users` | Technik | Reine Liste der Benutzer; Benutzer werden direkt in der Datenbank gepflegt (Ticket #145) |
+| `dashboard` | Lese-Ansicht | Kennzahlen und anstehende Termine |
+| `prospect_index` | Liste (Vermietung) | Einstieg für AF-01 bis AF-03 |
+| `viewing_index` | Liste (Vermietung) | Einstieg für AF-02 |
+| `tenancy_index` | Liste (Vermietung) | Einstieg für AF-05 bis AF-09 |
+| `tenancy_show` | Detail (Vermietung) | Einstieg für AF-05 bis AF-09 |
+| `owner_index` | Liste (Bestand) | Einstieg für AF-13 |
+| `owner_show` | Detail (Bestand) | Eigentümer mit seinen Liegenschaften |
+| `property_index` | Liste (Bestand) | Einstieg für AF-10 |
+| `property_show` | Detail (Bestand) | Liegenschaft mit Gebäuden und Kennzahlen; Einstieg für AF-11 |
+| `unit_index` | Liste (Bestand) | Einstieg für AF-12 |
+| `unit_show` | Detail (Bestand) | Mieteinheit mit aktuellem Mietverhältnis; Einstieg für AF-04 und AF-16 |
+| `tenant_index` | Liste (Bestand) | Einstieg für AF-14 |
+| `tenant_show` | Detail (Bestand) | Mieter mit seinen Mietverhältnissen |
+| `provider_index` | Liste (Bestand) | Einstieg für AF-15 |
+| `issue_index` | Liste (Meldungen) | Einstieg für AF-16 und AF-17 (Sammeländerung) |
+| `issue_show` | Detail (Meldungen) | Einstieg für AF-17 bis AF-20 |
+| `task_index` | Liste (Aufgaben) | Einstieg für AF-21 bis AF-23 |
+| `appointment_index` | Liste (Termine) | Einstieg für AF-24 |
+| `charge_index` | Liste (Abrechnung) | Einstieg für AF-25 |
+| `account_index` | Liste (Abrechnung) | Einstieg für AF-26 |
+| `booking_index` | Liste (Abrechnung) | Einstieg für AF-27 |
 
-**Gesamtabgleich:**  
-$$\mathbf{41\text{ Aktions-Routen (AF-01 bis AF-29)}} + \mathbf{23\text{ technische/passive Routen}} = \mathbf{64\text{ Routen des Altsystems}}$$
-
+**Abgleich:** 40 Routen in Anwendungsfällen + 24 Technik/Lese-Ansichten = 64 Routen. Jede Route kommt genau einmal vor.

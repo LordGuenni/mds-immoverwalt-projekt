@@ -17,14 +17,14 @@ Ausgabe von `bin/console doctrine:mapping:info`: **18 gemappte Entitäten**
 | `App\Entity\Handover` | Übergabe- bzw. Rückgabeprotokoll einer Mieteinheit (Einzug oder Auszug) mit Zählerständen und Mängeldokumentation. | `src/Entity/Handover.php` |
 | `App\Entity\Issue` | Mängel- oder Schadensmeldung zu einer Liegenschaft bzw. Mieteinheit mit Status, Priorität und Kategorie/Gewerk. | `src/Entity/Issue.php` |
 | `App\Entity\IssueStatusChange` | Historisierter Statustracker einer Meldung mit vorherigem und neuem Status, Bearbeiter, Zeitstempel und Begründung. | `src/Entity/IssueStatusChange.php` |
-| `App\Entity\Owner` | Immobilieneigentümer (Auftraggeber der Verwaltung) mit Kontaktdaten, Steuernummer und Bankverbindung. | `src/Entity/Owner.php` |
+| `App\Entity\Owner` | Immobilieneigentümer (Auftraggeber der Verwaltung) mit Eigentümernummer, Anschrift, Ansprechpartner, Kontaktdaten und Status (aktiv/inaktiv). | `src/Entity/Owner.php` |
 | `App\Entity\Payment` | Zahlungseingang eines Mieters zu einem Mietverhältnis mit Betrag, Zahlungsdatum und Verwendungszweck. | `src/Entity/Payment.php` |
 | `App\Entity\Property` | Liegenschaft / Immobilienobjekt im Bestand; zentrale Klammer für Gebäude, Eigentümer und Abrechnungen. | `src/Entity/Property.php` |
 | `App\Entity\Prospect` | Mietinteressent für eine Mieteinheit mit Kontaktdaten, Wunschkriterien und Prozessstatus. | `src/Entity/Prospect.php` |
-| `App\Entity\RentalUnit` | Mieteinheit (Wohnung, Gewerbeeinheit, Stellplatz) mit Flächenangabe, Zimmeranzahl, Sollmiete und Zustand/Status. | `src/Entity/RentalUnit.php` |
+| `App\Entity\RentalUnit` | Mieteinheit (Wohnung oder Gewerbeeinheit) mit Einheitsnummer, Etage, Fläche, Angebotsmiete, Nebenkostenvorauszahlung und Einheitenstatus. | `src/Entity/RentalUnit.php` |
 | `App\Entity\ServiceProvider` | Externer Dienstleister bzw. Handwerksbetrieb mit Gewerk (Sanitär, Heizung, Elektro etc.) und Ansprechpartner. | `src/Entity/ServiceProvider.php` |
 | `App\Entity\Task` | Konkrete Arbeitsaufgabe (z. B. Reparaturauftrag aus einer Meldung) mit Fälligkeit, Dienstleisterzuweisung und Kosten. | `src/Entity/Task.php` |
-| `App\Entity\Tenancy` | Mietverhältnis zwischen Eigentümer/Verwaltung und Mieter(n) über eine Mieteinheit. | `src/Entity/Tenancy.php` |
+| `App\Entity\Tenancy` | Mietverhältnis eines oder mehrerer Mieter über eine Mieteinheit mit Laufzeit, Miete, Kaution und Status. | `src/Entity/Tenancy.php` |
 | `App\Entity\Tenant` | Mieter (Vertragspartei) mit Personendaten, Kontaktdaten und Verknüpfung zu Mietverträgen. | `src/Entity/Tenant.php` |
 | `App\Entity\User` | Mitarbeiter / Benutzer der Verwaltungssoftware mit Login-Daten und Systemrollen. | `src/Entity/User.php` |
 | `App\Entity\Viewing` | Besichtigungstermin zwischen Mietinteressent, zuständigem Mitarbeiter und Mieteinheit. | `src/Entity/Viewing.php` |
@@ -46,7 +46,7 @@ Jede Route stellt eine Aktion dar, die ein Benutzer oder das System auslösen ka
 | `viewing_index` | ANY `/vermietung/besichtigungen` | `LettingController::viewings()` | Liste aller geplanten und durchgeführten Besichtigungstermine anzeigen. |
 | `viewing_new` | GET\|POST `/vermietung/besichtigungen/neu` | `LettingController::newViewing() → RentalService::planViewing()` | Besichtigungstermin für einen Interessenten anlegen: setzt Interessentenstatus auf `VIEWING_PLANNED` und trägt synchron einen 30-minütigen Kalendertermin (`Appointment`) ein. |
 | `tenancy_index` | ANY `/vermietung/mietverhaeltnisse` | `TenancyController::index()` | Übersicht aller Mietverhältnisse anzeigen; filterbar nach laufenden Verträgen (`current`), allen Verträgen oder nach Status. |
-| `tenancy_new` | GET\|POST `/vermietung/mietverhaeltnisse/neu/{unit}` | `TenancyController::new() → TenancyService::createTenancy()` | Entwurf eines Mietverhältnisses für eine freie oder reservierte Einheit anlegen: prüft Belegungsüberschneidungen, übernimmt Richtmieten, vergibt Vertragsnummer (`MV-xxxx`), setzt Status auf `DRAFT` und Einheit auf `RESERVED`. |
+| `tenancy_new` | GET\|POST `/vermietung/mietverhaeltnisse/neu/{unit}` | `TenancyController::new() → TenancyService::createTenancy()` | Entwurf eines Mietverhältnisses für eine freie oder reservierte Einheit anlegen: prüft Belegungsüberschneidungen, übernimmt die Angebotsmiete der Einheit, vergibt Vertragsnummer (`MV-01xxx`), setzt Status auf `DRAFT` und Einheit auf `RESERVED`. |
 | `tenancy_show` | ANY `/vermietung/mietverhaeltnisse/{id}` | `TenancyController::show()` | Vertragsdetails, zugeordnete Mieter, Kontosaldo, Übergabeprotokolle und Termine des Mietverhältnisses einsehen. |
 | `tenancy_activate` | POST `/vermietung/mietverhaeltnisse/{id}/aktivieren` | `TenancyController::activate() → TenancyService::activate()` | Entwurf eines Mietverhältnisses wird wirksam: prüft Vorhandensein von Mietern, setzt das Mietverhältnis auf `ACTIVE`, die Mieteinheit auf `RENTED`, erzeugt einen automatischen Übergabetermin zum Einzug und generiert die erste monatliche Sollstellung. |
 | `tenancy_tenant` | POST `/vermietung/mietverhaeltnisse/{id}/mieter` | `TenancyController::tenants() → TenancyService::addTenant() / removeTenant()` | Mieter zum Vertrag hinzufügen oder entfernen; verhindert das Entfernen des letzten Mieters bei einem aktiven Vertrag. |
@@ -61,19 +61,19 @@ Jede Route stellt eine Aktion dar, die ein Benutzer oder das System auslösen ka
 | Route | Methode, URL | Controller | Was passiert fachlich? |
 |---|---|---|---|
 | `property_index` | ANY `/stammdaten/objekte/` | `PropertyController::index()` | Liste aller verwalteten Liegenschaften / Immobilienobjekte anzeigen. |
-| `property_new` | GET\|POST `/stammdaten/objekte/neu` | `PropertyController::new() → PropertyService::nextPropertyNumber()` | Neue Liegenschaft mit Adresse, Eigentümer und Verwaltergebühr erfassen; vergibt automatisch nächste Objektnummer (`OBJ-xxxx`). |
+| `property_new` | GET\|POST `/stammdaten/objekte/neu` | `PropertyController::new() → PropertyService::nextPropertyNumber()` | Neue Liegenschaft mit Adresse, Eigentümer, Baujahr und Verwaltungsbeginn erfassen; schlägt die nächste Objektnummer (`OB-0xxx`) vor. |
 | `property_show` | ANY `/stammdaten/objekte/{id}` | `PropertyController::show() → PropertyService::getStatistics(), AppointmentService::findFor()` | Detailansicht einer Liegenschaft mit Gebäuden, Einheiten, Kennzahlen (Sollmiete, Leerstand) und anstehenden Liegenschaftsterminen anzeigen. |
-| `property_edit` | GET\|POST `/stammdaten/objekte/{id}/bearbeiten` | `PropertyController::edit()` | Liegenschaftsdaten (Bezeichnung, Adresse, Baujahr, Eigentümer, Verwaltergebühr) bearbeiten. |
-| `building_new` | GET\|POST `/stammdaten/objekte/{id}/gebaeude/neu` | `PropertyController::newBuilding()` | Neues Gebäude innerhalb einer Liegenschaft anlegen; vergibt Gebäudenummer (`OBJ-xxxx-Gy`) und übernimmt die Liegenschaftsadresse. |
+| `property_edit` | GET\|POST `/stammdaten/objekte/{id}/bearbeiten` | `PropertyController::edit()` | Liegenschaftsdaten (Objektnummer, Bezeichnung, Adresse, Eigentümer, Baujahr, Verwaltungsbeginn, Status aktiv/Verwaltung beendet) bearbeiten. |
+| `building_new` | GET\|POST `/stammdaten/objekte/{id}/gebaeude/neu` | `PropertyController::newBuilding()` | Neues Gebäude innerhalb einer Liegenschaft anlegen; vergibt Gebäudenummer (`OB-0xxx-Gy`) und übernimmt die Liegenschaftsadresse. |
 | `building_edit` | GET\|POST `/stammdaten/objekte/gebaeude/{id}/bearbeiten` | `PropertyController::editBuilding()` | Gebäudedaten (Bezeichnung, Adresse, Baujahr, Etagen) aktualisieren. |
 | `unit_index` | ANY `/stammdaten/einheiten/` | `RentalUnitController::index()` | Gesamtliste aller Mieteinheiten anzeigen, optional gefiltert nach Belegungsstatus (`AVAILABLE`, `RENTED`, etc.). |
-| `unit_new` | GET\|POST `/stammdaten/einheiten/neu/{building}` | `RentalUnitController::new()` | Neue Mieteinheit (Wohnung, Gewerbe, Stellplatz) in einem Gebäude mit Fläche, Zimmern, Sollmiete und Vorauszahlung anlegen. |
+| `unit_new` | GET\|POST `/stammdaten/einheiten/neu/{building}` | `RentalUnitController::new()` | Neue Mieteinheit (Wohnung oder Gewerbe) in einem Gebäude mit Etage, Fläche, Angebotsmiete, Nebenkostenvorauszahlung und Status anlegen. |
 | `unit_show` | ANY `/stammdaten/einheiten/{id}` | `RentalUnitController::show()` | Detailseite einer Einheit mit aktuellem Mietverhältnis, Schadensmeldungen, Interessenten, Sollstellungen und Terminen anzeigen. |
-| `unit_edit` | GET\|POST `/stammdaten/einheiten/{id}/bearbeiten` | `RentalUnitController::edit()` | Mieteinheitsdaten bearbeiten (Fläche, Zimmer, Kaltmiete, Status) und Benutzer der Änderung protokollieren (`lastModifiedBy`). |
+| `unit_edit` | GET\|POST `/stammdaten/einheiten/{id}/bearbeiten` | `RentalUnitController::edit()` | Mieteinheitsdaten bearbeiten (Fläche, Etage, Angebotsmiete, Status – frei wählbar) und Benutzer der Änderung protokollieren (`lastModifiedBy`). |
 | `owner_index` | ANY `/stammdaten/eigentuemer/` | `OwnerController::index()` | Liste aller Immobilieneigentümer alphabetisch anzeigen. |
-| `owner_new` | GET\|POST `/stammdaten/eigentuemer/neu` | `OwnerController::new()` | Neuen Eigentümer anlegen mit automatischer Vergabe der Eigentümernummer (`EI-xxxx`). |
-| `owner_show` | ANY `/stammdaten/eigentuemer/{id}` | `OwnerController::show()` | Stammdaten, Bankverbindung und Liste der zugeordneten Liegenschaften eines Eigentümers einsehen. |
-| `owner_edit` | GET\|POST `/stammdaten/eigentuemer/{id}/bearbeiten` | `OwnerController::edit()` | Stammdaten, Adresse und Bankverbindung eines Eigentümers aktualisieren. |
+| `owner_new` | GET\|POST `/stammdaten/eigentuemer/neu` | `OwnerController::new()` | Neuen Eigentümer anlegen; die Eigentümernummer (`EI-xxxx`) wird vorgeschlagen und ist änderbar. |
+| `owner_show` | ANY `/stammdaten/eigentuemer/{id}` | `OwnerController::show()` | Stammdaten, Kontaktdaten und Liste der zugeordneten Liegenschaften eines Eigentümers einsehen. |
+| `owner_edit` | GET\|POST `/stammdaten/eigentuemer/{id}/bearbeiten` | `OwnerController::edit()` | Stammdaten, Anschrift, Kontaktdaten und Status eines Eigentümers aktualisieren. |
 | `tenant_index` | ANY `/stammdaten/mieter/` | `TenantController::index()` | Mieterverzeichnis anzeigen, filterbar nach Namenssuchbegriff (`q`). |
 | `tenant_new` | GET\|POST `/stammdaten/mieter/neu` | `TenantController::new()` | Mieter-Datensatz manuell mit Personen- und Kontaktdaten (Name, Telefon, E-Mail, Geburtsdatum, Notizen) erfassen. |
 | `tenant_show` | ANY `/stammdaten/mieter/{id}` | `TenantController::show()` | Kontaktdaten und Übersicht aller historischen und aktiven Mietverhältnisse eines Mieters anzeigen. |
@@ -89,7 +89,7 @@ Jede Route stellt eine Aktion dar, die ein Benutzer oder das System auslösen ka
 | Route | Methode, URL | Controller | Was passiert fachlich? |
 |---|---|---|---|
 | `issue_index` | ANY `/vorgaenge/meldungen/` | `IssueController::index()` | Liste aller Schadens- und Mängelmeldungen anzeigen (Filter nach offen, alle oder Einzelstatus). |
-| `issue_new` | GET\|POST `/vorgaenge/meldungen/neu` | `IssueController::new() → IssueService::createIssue()` | Schadensmeldung erfassen: vergibt Nummer (`MEL-xxxx`), verknüpft automatisch Liegenschaft und Mieter (bei Einheitbezug), weist Erfasser als Bearbeiter zu, setzt Priorität >= 4 direkt auf `IN_REVIEW` und dokumentiert Ersteintrag in Statushistorie. |
+| `issue_new` | GET\|POST `/vorgaenge/meldungen/neu` | `IssueController::new() → IssueService::createIssue()` | Schadensmeldung erfassen: vergibt Nummer (`ME-02xxx`), verknüpft automatisch Liegenschaft und Mieter (bei Einheitbezug), weist Erfasser als Bearbeiter zu, setzt Priorität >= 4 direkt auf `IN_REVIEW` und dokumentiert Ersteintrag in Statushistorie. |
 | `issue_show` | ANY `/vorgaenge/meldungen/{id}` | `IssueController::show() → IssueService::getCurrentTenancy(), IssueService::getRelatedAppointments()` | Detailansicht der Meldung inklusive Mietverhältnis, zugeordneten Aufgaben, Terminen und lückenloser Statushistorie anzeigen. |
 | `issue_edit` | GET\|POST `/vorgaenge/meldungen/{id}/bearbeiten` | `IssueController::edit()` | Stammdaten einer Meldung (Titel, Beschreibung, Priorität, Kategorie, Zuständigkeit) bearbeiten. |
 | `issue_status` | POST `/vorgaenge/meldungen/{id}/status` | `IssueController::status()` | Status einer Meldung manuell umschalten; protokolliert Vorher-/Nachher-Status, Bearbeiter und Kommentar in `IssueStatusChange`. |
@@ -98,7 +98,7 @@ Jede Route stellt eine Aktion dar, die ein Benutzer oder das System auslösen ka
 | `issue_add_task` | POST `/vorgaenge/meldungen/{id}/aufgabe` | `IssueController::addTask() → IssueService::createTaskFromIssue()` | Handwerker-/Folgeaufgabe zu einer Meldung erstellen: weist automatisch passenden Dienstleister nach Gewerk zu, berechnet Frist anhand Priorität und setzt Meldungsstatus auf `IN_PROGRESS`. |
 | `issue_print` | ANY `/vorgaenge/meldungen/{id}/druck` | `IssueController::print()` | Druckansicht einer Mitteilung/Bestätigung der Meldung für den Mieter aufrufen. |
 | `task_index` | ANY `/vorgaenge/aufgaben/` | `TaskController::index()` | Aufgabenliste anzeigen (standardmäßig offene Aufgaben, optional alle sortiert nach Fälligkeit). |
-| `task_new` | GET\|POST `/vorgaenge/aufgaben/neu` | `TaskController::new() → TaskService::save()` | Neue Arbeitsaufgabe anlegen; vergibt Aufgabennummer (`AUF-xxxx`), übernimmt Ansprechpartner bei Dienstleisterzuweisung und setzt Status auf `ASSIGNED`. |
+| `task_new` | GET\|POST `/vorgaenge/aufgaben/neu` | `TaskController::new() → TaskService::save()` | Neue Arbeitsaufgabe anlegen; vergibt Aufgabennummer (`AU-03xxx`); bei zugewiesenem Dienstleister wird dessen Ansprechpartner übernommen und der Status von `OPEN` auf `ASSIGNED` gesetzt. |
 | `task_edit` | GET\|POST `/vorgaenge/aufgaben/{id}/bearbeiten` | `TaskController::edit() → TaskService::save()` | Aufgabe bearbeiten (Titel, Fälligkeit, Priorität, Dienstleister, Schätz- und Ist-Kosten, Notizen). |
 | `task_done` | POST `/vorgaenge/aufgaben/{id}/erledigt` | `TaskController::done()` | Aufgabe als abgeschlossen und erledigt markieren (`DONE`). |
 | `task_reopen` | POST `/vorgaenge/aufgaben/{id}/wiedereroeffnen` | `TaskController::reopen()` | Erledigte Aufgabe mit zwingend erforderlicher Begründung wieder öffnen (`OPEN`); protokolliert Datum und Grund in den Notizen. |
@@ -146,7 +146,7 @@ Vollständige Tabelle aller **64 Routen** in der Reihenfolge von `bin/console de
 | `account_show` | GET\|POST `/abrechnung/mieterkonten/{id}` | `AccountingController::account() → AccountingService::recordPayment()` | Mieterkonto mit Buchungsverlauf anzeigen und Mietzahlung erfassen. |
 | `booking_index` | ANY `/abrechnung/buchungen` | `AccountingController::bookings()` | Die letzten 200 Liegenschaftsbuchungen (Einnahmen/Ausgaben) auflisten. |
 | `booking_new` | GET\|POST `/abrechnung/buchungen/neu` | `AccountingController::newBooking()` | Neue Liegenschaftsbuchung erfassen und Eigentümer zuordnen. |
-| `owner_statement` | ANY `/abrechnung/eigentuemerabrechnung` | `AccountingController::statement() → AccountingService::ownerStatement()` | Eigentümerabrechnung (Mieteinnahmen minus Ausgaben und Verwaltergebühr) berechnen. |
+| `owner_statement` | ANY `/abrechnung/eigentuemerabrechnung` | `AccountingController::statement() → AccountingService::ownerStatement()` | Eigentümerabrechnung (Mieteinnahmen minus Ausgaben und Verwaltungshonorar von pauschal 5 % laut Konfiguration) berechnen. |
 | `appointment_index` | ANY `/vorgaenge/termine/` | `AppointmentController::index()` | Kalendertermine anzeigen (anstehend oder alle). |
 | `appointment_new` | GET\|POST `/vorgaenge/termine/neu` | `AppointmentController::new()` | Neuen Termin erfassen (optional mit Objekt-/Meldungsbezug). |
 | `appointment_edit` | GET\|POST `/vorgaenge/termine/{id}/bearbeiten` | `AppointmentController::edit()` | Bestehenden Termin bearbeiten. |
@@ -167,14 +167,14 @@ Vollständige Tabelle aller **64 Routen** in der Reihenfolge von `bin/console de
 | `viewing_index` | ANY `/vermietung/besichtigungen` | `LettingController::viewings()` | Besichtigungstermine auflisten. |
 | `viewing_new` | GET\|POST `/vermietung/besichtigungen/neu` | `LettingController::newViewing() → RentalService::planViewing()` | Besichtigung planen, Interessentenstatus anpassen und Kalendertermin anlegen. |
 | `owner_index` | ANY `/stammdaten/eigentuemer/` | `OwnerController::index()` | Liste der Immobilieneigentümer alphabetisch anzeigen. |
-| `owner_new` | GET\|POST `/stammdaten/eigentuemer/neu` | `OwnerController::new()` | Neuen Eigentümer erfassen und Eigentümernummer (`EI-xxxx`) vergeben. |
+| `owner_new` | GET\|POST `/stammdaten/eigentuemer/neu` | `OwnerController::new()` | Neuen Eigentümer erfassen und Eigentümernummer (`EI-xxxx`) vorschlagen. |
 | `owner_show` | ANY `/stammdaten/eigentuemer/{id}` | `OwnerController::show()` | Eigentümerdaten und zugeordnete Liegenschaften anzeigen. |
 | `owner_edit` | GET\|POST `/stammdaten/eigentuemer/{id}/bearbeiten` | `OwnerController::edit()` | Eigentümerdaten bearbeiten. |
 | `property_index` | ANY `/stammdaten/objekte/` | `PropertyController::index()` | Übersicht aller Liegenschaften anzeigen. |
-| `property_new` | GET\|POST `/stammdaten/objekte/neu` | `PropertyController::new() → PropertyService::nextPropertyNumber()` | Neue Liegenschaft erfassen und Objektnummer (`OBJ-xxxx`) vergeben. |
+| `property_new` | GET\|POST `/stammdaten/objekte/neu` | `PropertyController::new() → PropertyService::nextPropertyNumber()` | Neue Liegenschaft erfassen und Objektnummer (`OB-0xxx`) vorschlagen. |
 | `property_show` | ANY `/stammdaten/objekte/{id}` | `PropertyController::show() → PropertyService::getStatistics(), AppointmentService::findFor()` | Liegenschaftsdetails, Kennzahlen, Gebäude und Liegenschaftstermine anzeigen. |
 | `property_edit` | GET\|POST `/stammdaten/objekte/{id}/bearbeiten` | `PropertyController::edit()` | Stammdaten einer Liegenschaft bearbeiten. |
-| `building_new` | GET\|POST `/stammdaten/objekte/{id}/gebaeude/neu` | `PropertyController::newBuilding()` | Neues Gebäude in einer Liegenschaft anlegen (`OBJ-xxxx-Gy`). |
+| `building_new` | GET\|POST `/stammdaten/objekte/{id}/gebaeude/neu` | `PropertyController::newBuilding()` | Neues Gebäude in einer Liegenschaft anlegen (`OB-0xxx-Gy`). |
 | `building_edit` | GET\|POST `/stammdaten/objekte/gebaeude/{id}/bearbeiten` | `PropertyController::editBuilding()` | Gebäudedaten bearbeiten. |
 | `unit_index` | ANY `/stammdaten/einheiten/` | `RentalUnitController::index()` | Übersicht aller Mieteinheiten anzeigen (Filter nach Status). |
 | `unit_new` | GET\|POST `/stammdaten/einheiten/neu/{building}` | `RentalUnitController::new()` | Neue Mieteinheit zu einem Gebäude erfassen. |
@@ -188,7 +188,7 @@ Vollständige Tabelle aller **64 Routen** in der Reihenfolge von `bin/console de
 | `provider_new` | GET\|POST `/stammdaten/dienstleister/neu` | `ServiceProviderController::new()` | Neuen Dienstleister mit Gewerk und Ansprechpartner anlegen. |
 | `provider_edit` | GET\|POST `/stammdaten/dienstleister/{id}/bearbeiten` | `ServiceProviderController::edit()` | Dienstleisterdaten aktualisieren. |
 | `task_index` | ANY `/vorgaenge/aufgaben/` | `TaskController::index()` | Aufgabenübersicht anzeigen (offene oder alle Aufgaben). |
-| `task_new` | GET\|POST `/vorgaenge/aufgaben/neu` | `TaskController::new() → TaskService::save()` | Neue Aufgabe erfassen, Nummer (`AUF-xxxx`) vergeben und Dienstleister prüfen. |
+| `task_new` | GET\|POST `/vorgaenge/aufgaben/neu` | `TaskController::new() → TaskService::save()` | Neue Aufgabe erfassen, Nummer (`AU-03xxx`) vergeben und Dienstleister prüfen. |
 | `task_edit` | GET\|POST `/vorgaenge/aufgaben/{id}/bearbeiten` | `TaskController::edit() → TaskService::save()` | Aufgabe (Status, Fälligkeit, Kosten, Dienstleister) bearbeiten. |
 | `task_done` | POST `/vorgaenge/aufgaben/{id}/erledigt` | `TaskController::done()` | Aufgabe als erledigt markieren (`DONE`). |
 | `task_reopen` | POST `/vorgaenge/aufgaben/{id}/wiedereroeffnen` | `TaskController::reopen()` | Erledigte Aufgabe mit Begründung wieder öffnen (`OPEN`). |
